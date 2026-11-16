@@ -7,7 +7,6 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Улучшенные интерактивные элементы для мобильных устройств */
         button, input, select {
             touch-action: manipulation;
         }
@@ -22,7 +21,7 @@
                 <div class="bg-blue-600 p-2 rounded-xl text-xl font-bold">📦</div>
                 <div>
                     <h1 class="text-lg font-bold leading-tight">Склад КМЧ</h1>
-                    <p class="text-xs text-slate-400" id="currentRoleSubtitle">Режим сотрудника</p>
+                    <p class="text-xs text-slate-400" id="currentRoleSubtitle">Гость</p>
                 </div>
             </div>
 
@@ -31,21 +30,22 @@
                 <button onclick="switchTab('warehouse')" id="tab-warehouse" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-blue-600 text-white whitespace-nowrap">
                     Склад
                 </button>
-                <button onclick="switchTab('calculator')" id="tab-calculator" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap hidden admin-only">
-                    Калькулятор КМЧ
+                <button onclick="switchTab('calculator')" id="tab-calculator" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">
+                    План КМЧ
                 </button>
                 <button onclick="switchTab('admin')" id="tab-admin" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap hidden admin-only">
-                    Управление (Админ)
+                    Админка
                 </button>
                 <button onclick="switchTab('logs')" id="tab-logs" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">
                     История
                 </button>
             </nav>
 
-            <!-- Кнопка входа/выхода из режима админа -->
-            <div>
-                <button id="authBtn" onclick="toggleAuthModal()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition active:scale-95">
-                    🔐 Режим Админа
+            <!-- Кнопка входа / профиля -->
+            <div class="flex items-center space-x-2">
+                <span id="activeUserBadge" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 hidden"></span>
+                <button id="authBtn" onclick="openLoginModal()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition active:scale-95 shadow-sm">
+                    🔑 Войти
                 </button>
             </div>
         </div>
@@ -56,7 +56,7 @@
 
         <!-- СЕКЦИЯ 1: СКЛАД -->
         <section id="section-warehouse" class="space-y-6">
-            <!-- Красивый верхний блок с ключевыми позициями -->
+            <!-- Премиум-блок ключевых позиций -->
             <div class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-2xl p-5 text-white shadow-lg">
                 <h2 class="text-xs uppercase tracking-wider text-blue-200 font-semibold mb-3">Главные позиции в наличии</h2>
                 <div id="topSummaryBlock" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -64,12 +64,12 @@
                 </div>
             </div>
 
-            <!-- Список всех расходников -->
+            <!-- Список расходников -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">Список всех расходников</h3>
-                        <p class="text-xs text-slate-500">Нажмите «Пополнить», чтобы добавить приход на склад</p>
+                        <p class="text-xs text-slate-500">Пополняйте или списывайте позиции по факту работы</p>
                     </div>
                     <div class="w-full sm:w-72">
                         <input type="text" id="searchStockInput" oninput="renderWarehouse()" placeholder="🔍 Поиск по названию..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -93,19 +93,23 @@
             </div>
         </section>
 
-        <!-- СЕКЦИЯ 2: КАЛЬКУЛЯТОР КМЧ (Только для Админа) -->
-        <section id="section-calculator" class="space-y-6 hidden admin-only-section">
+        <!-- СЕКЦИЯ 2: ПЛАН И КАЛЬКУЛЯТОР КМЧ -->
+        <section id="section-calculator" class="space-y-6">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-6">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-900">Калькулятор сборки КМЧ</h2>
-                    <p class="text-xs text-slate-500">Привяжите расходники к конкретному изделию КМЧ, чтобы система автоматически рассчитывала, сколько штук можно собрать.</p>
+                    <h2 class="text-lg font-bold text-slate-900">План сборки КМЧ и Калькулятор запасов</h2>
+                    <p class="text-xs text-slate-500">Сотрудники видят, сколько изделий нужно собрать по плану, сколько есть на складе и что для этого требуется.</p>
                 </div>
 
-                <!-- Создать новый КМЧ -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                <!-- Блок добавления КМЧ (Только Админ) -->
+                <div id="adminKmchCreateBlock" class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end hidden admin-only-section">
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Название нового КМЧ изделия</label>
-                        <input type="text" id="newKmchName" placeholder="например: КМЧ СГМН" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Название КМЧ изделия</label>
+                        <input type="text" id="newKmchName" placeholder="например: КМЧ СГМН G6" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">План (сколько нужно штук)</label>
+                        <input type="number" id="newKmchTarget" value="50" min="0" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
                         <button onclick="createKmchItem()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition active:scale-95 shadow-sm">
@@ -114,50 +118,63 @@
                     </div>
                 </div>
 
-                <!-- Список созданных КМЧ и их расчет -->
+                <!-- Список планов КМЧ -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="kmchCalculationsList">
                     <!-- Заполняется JS -->
                 </div>
             </div>
         </section>
 
-        <!-- СЕКЦИЯ 3: УПРАВЛЕНИЕ АДМИНА (Только для Админа) -->
+        <!-- СЕКЦИЯ 3: УПРАВЛЕНИЕ АДМИНА (Сотрудники и Склад) -->
         <section id="section-admin" class="space-y-6 hidden admin-only-section">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-900">Добавление новой позиции на склад</h2>
-                    <p class="text-xs text-slate-500">Только администратор может вводить новые номенклатурные позиции.</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Название расходника</label>
-                        <input type="text" id="adminItemName" placeholder="например: Резьба приварная 32Ду" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Добавление позиции на склад -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4">
+                    <h3 class="text-base font-bold text-slate-900">Добавить новый расходник</h3>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Название</label>
+                        <input type="text" id="adminItemName" placeholder="например: Труба изогнутая 25ДУ" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Начальное количество</label>
-                        <input type="number" id="adminItemQty" value="0" min="0" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Количество</label>
+                        <input type="number" id="adminItemQty" value="0" min="0" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
                     </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <label class="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer">
-                        <input type="checkbox" id="adminItemTop" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                    <label class="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer pt-1">
+                        <input type="checkbox" id="adminItemTop" class="w-4 h-4 text-blue-600 rounded border-slate-300">
                         <span class="font-medium">Отображать в верхнем премиум-блоке</span>
                     </label>
+                    <button onclick="adminAddNewItem()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm rounded-xl transition shadow-sm">
+                        Создать расходник
+                    </button>
                 </div>
-                <button onclick="adminAddNewItem()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm rounded-xl transition active:scale-95 shadow-sm">
-                    Создать позицию
-                </button>
+
+                <!-- Управление сотрудниками -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4">
+                    <h3 class="text-base font-bold text-slate-900">Управление сотрудниками</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" id="newEmpName" placeholder="Имя (например: Иван)" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
+                        <input type="text" id="newEmpPass" placeholder="Пароль" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
+                    </div>
+                    <button onclick="adminAddEmployee()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition shadow-sm">
+                        ➕ Добавить сотрудника
+                    </button>
+                    <div class="border-t border-slate-100 pt-3">
+                        <p class="text-xs font-semibold text-slate-500 mb-2">Список сотрудников:</p>
+                        <div id="employeesListContainer" class="space-y-2 max-h-40 overflow-y-auto">
+                            <!-- Заполняется JS -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- СЕКЦИЯ 4: ИСТОРИЯ (ЛОГИ ДЕЙСТВИЙ) -->
+        <!-- СЕКЦИЯ 4: ИСТОРИЯ (ЛОГИ) -->
         <section id="section-logs" class="space-y-6 hidden">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center">
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">Журнал действий и аудита</h3>
-                        <p class="text-xs text-slate-500">Кто, когда и какие позиции изменил на складе</p>
+                        <h3 class="text-base font-bold text-slate-900">Журнал аудита действий</h3>
+                        <p class="text-xs text-slate-500">Кто и с какого аккаунта вносил изменения</p>
                     </div>
                     <button onclick="clearLogs()" class="px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 text-xs font-medium rounded-lg transition">
                         Очистить историю
@@ -167,8 +184,8 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-100">
-                                <th class="p-3 sm:p-4 font-semibold">Дата и время</th>
-                                <th class="p-3 sm:p-4 font-semibold">Пользователь / Роль</th>
+                                <th class="p-3 sm:p-4 font-semibold">Дата / Время</th>
+                                <th class="p-3 sm:p-4 font-semibold">Пользователь</th>
                                 <th class="p-3 sm:p-4 font-semibold">Действие</th>
                             </tr>
                         </thead>
@@ -182,68 +199,69 @@
 
     </main>
 
-    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ИЗМЕНЕНИЯ КОЛИЧЕСТВА -->
+    <!-- МОДАЛЬНОЕ ОКНО ВХОДА (ВЫБОР ПОЛЬЗОВАТЕЛЯ ИЛИ АДМИНА) -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-slate-900">Авторизация в системе</h3>
+            <p class="text-xs text-slate-500">Выберите аккаунт для входа:</p>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Войти как Администратор</label>
+                    <div class="flex space-x-2">
+                        <input type="password" id="adminPasswordInput" placeholder="Пароль (1234)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
+                        <button onclick="loginAsAdmin()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-xl transition">ОК</button>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-3">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Или выберите сотрудника</label>
+                    <select id="employeeSelectLogin" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none mb-2">
+                        <!-- Заполняется JS -->
+                    </select>
+                    <input type="password" id="employeePasswordInput" placeholder="Пароль сотрудника" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none mb-2">
+                    <button onclick="loginAsEmployee()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition">Войти как сотрудник</button>
+                </div>
+            </div>
+
+            <button onclick="closeLoginModal()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl transition">
+                Закрыть
+            </button>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ИЗМЕНЕНИЯ КОЛИЧЕСТВА -->
     <div id="actionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
             <h3 id="modalTitle" class="text-base font-bold text-slate-900">Изменение остатка</h3>
             <p id="modalItemName" class="text-xs text-slate-500 font-medium"></p>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Количество штук:</label>
-                <input type="number" id="modalInputQty" min="1" value="1" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="number" id="modalInputQty" min="1" value="1" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base focus:outline-none">
             </div>
             <div class="flex space-x-3 pt-2">
-                <button onclick="closeModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm rounded-xl transition">
-                    Отмена
-                </button>
-                <button id="modalConfirmBtn" class="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition shadow-sm">
-                    Подтвердить
-                </button>
+                <button onclick="closeModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm rounded-xl">Отмена</button>
+                <button id="modalConfirmBtn" class="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl shadow-sm">Подтвердить</button>
             </div>
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ВХОДА АДМИНА -->
-    <div id="authModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
-            <h3 class="text-base font-bold text-slate-900">Вход для Администратора</h3>
-            <p class="text-xs text-slate-500">Введите пароль администратора для получения полного доступа:</p>
-            <div>
-                <input type="password" id="adminPasswordInput" placeholder="Пароль (по умолчанию: 1234)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div class="flex space-x-3 pt-2">
-                <button onclick="toggleAuthModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm rounded-xl transition">
-                    Отмена
-                </button>
-                <button onclick="verifyAdminPassword()" class="w-1/2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm rounded-xl transition shadow-sm">
-                    Войти
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО ПРИВЯЗКИ РАСХОДНИКОВ К КМЧ -->
+    <!-- МОДАЛЬНОЕ ОКНО НАСТРОЙКИ КОМПОНЕНТОВ КМЧ -->
     <div id="kmchConfigModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
             <h3 class="text-base font-bold text-slate-900">Настройка состава КМЧ</h3>
             <p id="kmchConfigTitle" class="text-xs text-slate-500 font-medium"></p>
-            <div class="overflow-y-auto flex-grow space-y-2 pr-1 max-h-60" id="kmchComponentsCheckboxList">
-                <!-- Чекбоксы расходников -->
-            </div>
+            <div class="overflow-y-auto flex-grow space-y-2 pr-1 max-h-60" id="kmchComponentsCheckboxList"></div>
             <div class="flex space-x-3 pt-2 border-t border-slate-100">
-                <button onclick="closeKmchConfigModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm rounded-xl transition">
-                    Закрыть
-                </button>
-                <button onclick="saveKmchConfig()" class="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition shadow-sm">
-                    Сохранить
-                </button>
+                <button onclick="closeKmchConfigModal()" class="w-1/2 py-2.5 bg-slate-100 text-slate-700 font-medium text-sm rounded-xl">Закрыть</button>
+                <button onclick="saveKmchConfig()" class="w-1/2 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-xl shadow-sm">Сохранить</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Данные по умолчанию
-        let isAdmin = false;
-        let activeTab = 'warehouse';
+        // Инициализация данных
+        let currentUser = { name: 'Гость', role: 'guest' }; // role: 'admin' or 'employee' or 'guest'
 
         let items = JSON.parse(localStorage.getItem('kmch_items')) || [
             { id: '1', name: 'Резьба приварная 32Ду', qty: 50, top: true },
@@ -253,19 +271,26 @@
             { id: '5', name: 'Гайка накидная G 1 1/4', qty: 85, top: false }
         ];
 
+        let employees = JSON.parse(localStorage.getItem('kmch_employees')) || [
+            { id: 'e1', name: 'Иван (Сотрудник)', pass: '111' },
+            { id: 'e2', name: 'Петр (Сотрудник)', pass: '222' }
+        ];
+
         let kmchList = JSON.parse(localStorage.getItem('kmch_products')) || [
-            { id: 'k1', name: 'КМЧ СГМН G6', requiredIds: ['1', '2', '3'] }
+            { id: 'k1', name: 'КМЧ СГМН G6', target: 100, requiredIds: ['1', '2', '3'] }
         ];
 
         let logs = JSON.parse(localStorage.getItem('kmch_logs')) || [
-            { time: '16.11.2026 10:00', user: 'Администратор', text: 'Инициализация склада и позиций' }
+            { time: '16.11.2026 10:00', user: Система, text: 'Инициализация системы' }
         ];
 
-        let currentModalAction = null; // { type: 'add'/'sub', id }
+        let currentModalAction = null;
         let currentEditingKmchId = null;
+        let activeTab = 'warehouse';
 
         function saveData() {
             localStorage.setItem('kmch_items', JSON.stringify(items));
+            localStorage.setItem('kmch_employees', JSON.stringify(employees));
             localStorage.setItem('kmch_products', JSON.stringify(kmchList));
             localStorage.setItem('kmch_logs', JSON.stringify(logs));
         }
@@ -273,15 +298,15 @@
         function addLog(text) {
             const now = new Date();
             const timeStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const userRole = isAdmin ? 'Администратор' : 'Сотрудник';
-            logs.unshift({ time: timeStr, user: userRole, text: text });
+            const userName = currentUser.role === 'admin' ? 'Администратор' : currentUser.name;
+            logs.unshift({ time: timeStr, user: userName, text: text });
             saveData();
         }
 
-        // Переключение вкладок
+        // Управление вкладками
         function switchTab(tabId) {
-            if (!isAdmin && (tabId === 'admin' || tabId === 'calculator')) {
-                toggleAuthModal();
+            if (tabId === 'admin' && currentUser.role !== 'admin') {
+                openLoginModal();
                 return;
             }
             activeTab = tabId;
@@ -299,65 +324,109 @@
             renderAll();
         }
 
-        // Авторизация админа
-        function toggleAuthModal() {
-            if (isAdmin) {
-                isAdmin = false;
-                document.getElementById('currentRoleSubtitle').innerText = "Режим сотрудника";
-                document.getElementById('authBtn').innerText = "🔐 Режим Админа";
-                document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
-                document.querySelectorAll('.admin-only-section').forEach(el => el.classList.add('hidden'));
-                if (activeTab === 'admin' || activeTab === 'calculator') {
-                    switchTab('warehouse');
-                }
-                renderAll();
-                alert("Вы вышли из режима администратора.");
-            } else {
-                document.getElementById('adminPasswordInput').value = '';
-                document.getElementById('authModal').classList.toggle('hidden');
-            }
+        // Авторизация
+        function openLoginModal() {
+            // Заполнить селект сотрудниками
+            const sel = document.getElementById('employeeSelectLogin');
+            sel.innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            if(employees.length === 0) sel.innerHTML = '<option value="">Нет сотрудников</option>';
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('employeePasswordInput').value = '';
+            document.getElementById('loginModal').classList.remove('hidden');
         }
 
-        function verifyAdminPassword() {
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        function loginAsAdmin() {
             const pass = document.getElementById('adminPasswordInput').value;
-            if (pass === '1234') { // Пароль по умолчанию
-                isAdmin = true;
-                document.getElementById('authModal').classList.add('hidden');
-                document.getElementById('currentRoleSubtitle').innerText = "Режим Администратора";
-                document.getElementById('authBtn').innerText = "🔓 Выйти из Админки";
-                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-                renderAll();
-                alert("Успешный вход в режим администратора!");
+            if (pass === '1234') {
+                currentUser = { name: 'Администратор', role: 'admin' };
+                finalizeLogin("Успешный вход как Администратор");
             } else {
-                alert("Неверный пароль! (попробуйте 1234)");
+                alert('Неверный пароль администратора (по умолчанию: 1234)');
             }
         }
 
-        // Рендеринг всех данных
+        function loginAsEmployee() {
+            const empId = document.getElementById('employeeSelectLogin').value;
+            const pass = document.getElementById('employeePasswordInput').value;
+            const emp = employees.find(e => e.id === empId);
+
+            if (!emp) {
+                alert('Выберите сотрудника');
+                return;
+            }
+            if (emp.pass !== pass) {
+                alert('Неверный пароль сотрудника!');
+                return;
+            }
+
+            currentUser = { name: emp.name, role: 'employee' };
+            finalizeLogin(`Вход сотрудника: ${emp.name}`);
+        }
+
+        function finalizeLogin(msg) {
+            closeLoginModal();
+            updateUIRoles();
+            renderAll();
+            alert(msg);
+        }
+
+        function updateUIRoles() {
+            const subtitle = document.getElementById('currentRoleSubtitle');
+            const authBtn = document.getElementById('authBtn');
+            const badge = document.getElementById('activeUserBadge');
+
+            subtitle.innerText = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'employee' ? 'Сотрудник: ' + currentUser.name : 'Гость');
+            
+            if (currentUser.role !== 'guest') {
+                badge.innerText = currentUser.name;
+                badge.classList.remove('hidden');
+                authBtn.innerText = "🚪 Сменить аккаунт";
+            } else {
+                badge.classList.add('hidden');
+                authBtn.innerText = "🔑 Войти";
+            }
+
+            const adminSections = document.querySelectorAll('.admin-only-section');
+            const adminTabs = document.querySelectorAll('.admin-only');
+
+            if (currentUser.role === 'admin') {
+                adminSections.forEach(el => el.classList.remove('hidden'));
+                adminTabs.forEach(el => el.classList.remove('hidden'));
+            } else {
+                adminSections.forEach(el => el.classList.add('hidden'));
+                adminTabs.forEach(el => el.classList.add('hidden'));
+                if (activeTab === 'admin') switchTab('warehouse');
+            }
+        }
+
+        // Рендеринг
         function renderAll() {
             renderTopSummary();
             renderWarehouse();
             renderCalculator();
+            renderAdminEmployees();
             renderLogs();
         }
 
-        // Верхний блок
         function renderTopSummary() {
             const container = document.getElementById('topSummaryBlock');
             const topItems = items.filter(i => i.top);
             if (topItems.length === 0) {
-                container.innerHTML = '<p class="text-xs text-blue-200 col-span-full">Нет позиций в верхнем блоке. Администратор может отметить их при создании или редактировании.</p>';
+                container.innerHTML = '<p class="text-xs text-blue-200 col-span-full">Нет позиций в верхнем блоке.</p>';
                 return;
             }
             container.innerHTML = topItems.map(item => `
                 <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 flex flex-col justify-between">
-                    <span class="text-xs text-blue-100 font-medium truncate" title="${item.name}">${item.name}</span>
+                    <span class="text-xs text-blue-100 font-medium truncate">${item.name}</span>
                     <span class="text-2xl font-black mt-2">${item.qty} <span class="text-xs font-normal text-blue-200">шт</span></span>
                 </div>
             `).join('');
         }
 
-        // Таблица склада
         function renderWarehouse() {
             const query = document.getElementById('searchStockInput').value.toLowerCase();
             const tbody = document.getElementById('warehouseTableBody');
@@ -369,10 +438,10 @@
             }
 
             tbody.innerHTML = filtered.map(item => `
-                <tr class="hover:bg-slate-50/80 transition">
+                <tr class="hover:bg-slate-50/85 transition">
                     <td class="p-3 sm:p-4 font-medium text-slate-900">
                         ${item.name}
-                        ${item.top ? '<span class="ml-2 inline-block px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded">Топ</span>' : ''}
+                        ${item.top ? '<span class="ml-2 px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded">Топ</span>' : ''}
                     </td>
                     <td class="p-3 sm:p-4 text-center font-bold text-slate-700">${item.qty} шт</td>
                     <td class="p-3 sm:p-4 text-right space-x-2">
@@ -382,16 +451,13 @@
                         <button onclick="openActionModal('sub', '${item.id}')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold rounded-lg transition active:scale-95 shadow-sm">
                             ➖ Списать
                         </button>
-                        ${isAdmin ? `
-                        <button onclick="deleteItem('${item.id}')" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition active:scale-95" title="Удалить позицию">
-                            🗑️
-                        </button>` : ''}
+                        ${currentUser.role === 'admin' ? `
+                        <button onclick="deleteItem('${item.id}')" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg">🗑️</button>` : ''}
                     </td>
                 </tr>
             `).join('');
         }
 
-        // Модальное окно пополнения/списания
         function openActionModal(type, id) {
             const item = items.find(i => i.id === id);
             if (!item) return;
@@ -402,9 +468,6 @@
             document.getElementById('actionModal').classList.remove('hidden');
 
             const confirmBtn = document.getElementById('modalConfirmBtn');
-            confirmBtn.className = type === 'add' 
-                ? 'w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl transition shadow-sm'
-                : 'w-1/2 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm rounded-xl transition shadow-sm';
             confirmBtn.onclick = submitActionModal;
         }
 
@@ -414,10 +477,7 @@
 
         function submitActionModal() {
             const val = parseInt(document.getElementById('modalInputQty').value);
-            if (isNaN(val) || val <= 0) {
-                alert('Введите корректное число');
-                return;
-            }
+            if (isNaN(val) || val <= 0) { alert('Введите число'); return; }
             const item = items.find(i => i.id === currentModalAction.id);
             if (!item) return;
 
@@ -425,10 +485,7 @@
                 item.qty += val;
                 addLog(`Пополнено «${item.name}» на +${val} шт.`);
             } else {
-                if (item.qty < val) {
-                    alert('На складе недостаточно штук для списания!');
-                    return;
-                }
+                if (item.qty < val) { alert('Недостаточно на складе!'); return; }
                 item.qty -= val;
                 addLog(`Списано «${item.name}» на -${val} шт.`);
             }
@@ -438,56 +495,72 @@
             renderAll();
         }
 
-        // Администратор: создание позиции
+        // Админка: создание позиций и сотрудников
         function adminAddNewItem() {
             const name = document.getElementById('adminItemName').value.trim();
             const qty = parseInt(document.getElementById('adminItemQty').value) || 0;
             const top = document.getElementById('adminItemTop').checked;
+            if (!name) { alert('Введите название'); return; }
 
-            if (!name) {
-                alert('Введите название расходника');
-                return;
-            }
-
-            const newItem = {
-                id: Date.now().toString(),
-                name,
-                qty,
-                top
-            };
-
-            items.push(newItem);
-            addLog(`Администратор создал новую позицию: «${name}» (${qty} шт)`);
+            items.push({ id: Date.now().toString(), name, qty, top });
+            addLog(`Создан расходник: «${name}» (${qty} шт)`);
             saveData();
-
             document.getElementById('adminItemName').value = '';
             document.getElementById('adminItemQty').value = '0';
-            document.getElementById('adminItemTop').checked = false;
             renderAll();
-            alert('Позиция успешно создана!');
+            alert('Успешно создано!');
         }
 
         function deleteItem(id) {
             const item = items.find(i => i.id === id);
-            if (!confirm(`Точно удалить позицию «${item.name}» со склада?`)) return;
+            if(!confirm(`Удалить «${item.name}»?`)) return;
             items = items.filter(i => i.id !== id);
-            addLog(`Администратор удалил позицию: «${item.name}»`);
+            addLog(`Удален расходник: «${item.name}»`);
             saveData();
             renderAll();
         }
 
-        // Калькулятор КМЧ
-        function createKmchItem() {
-            const name = document.getElementById('newKmchName').value.trim();
-            if (!name) {
-                alert('Введите название КМЧ');
+        function adminAddEmployee() {
+            const name = document.getElementById('newEmpName').value.trim();
+            const pass = document.getElementById('newEmpPass').value.trim();
+            if (!name || !pass) { alert('Заполните имя и пароль сотрудника'); return; }
+
+            employees.push({ id: 'emp_' + Date.now(), name, pass });
+            saveData();
+            document.getElementById('newEmpName').value = '';
+            document.getElementById('newEmpPass').value = '';
+            renderAdminEmployees();
+            alert('Сотрудник добавлен!');
+        }
+
+        function deleteEmployee(id) {
+            employees = employees.filter(e => e.id !== id);
+            saveData();
+            renderAdminEmployees();
+        }
+
+        function renderAdminEmployees() {
+            const container = document.getElementById('employeesListContainer');
+            if(!container) return;
+            if(employees.length === 0) {
+                container.innerHTML = '<span class="text-xs text-slate-400">Нет сотрудников</span>';
                 return;
             }
-            kmchList.push({
-                id: 'k_' + Date.now(),
-                name,
-                requiredIds: []
-            });
+            container.innerHTML = employees.map(e => `
+                <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl text-xs">
+                    <div><span class="font-bold">${e.name}</span> <span class="text-slate-400">(${e.pass})</span></div>
+                    <button onclick="deleteEmployee('${e.id}')" class="text-red-500 hover:text-red-700 font-bold">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        // План и Калькулятор КМЧ
+        function createKmchItem() {
+            const name = document.getElementById('newKmchName').value.trim();
+            const target = parseInt(document.getElementById('newKmchTarget').value) || 50;
+            if (!name) { alert('Введите название КМЧ'); return; }
+
+            kmchList.push({ id: 'k_' + Date.now(), name, target, requiredIds: [] });
             document.getElementById('newKmchName').value = '';
             saveData();
             renderCalculator();
@@ -496,43 +569,52 @@
         function renderCalculator() {
             const container = document.getElementById('kmchCalculationsList');
             if (kmchList.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет добавленных КМЧ изделий.</p>';
+                container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет планов КМЧ.</p>';
                 return;
             }
 
             container.innerHTML = kmchList.map(kmch => {
-                // Расчет сколько можно собрать
                 let maxAssembly = 0;
                 if (kmch.requiredIds.length > 0) {
-                    const possibleCounts = kmch.requiredIds.map(reqId => {
+                    const counts = kmch.requiredIds.map(reqId => {
                         const stockItem = items.find(i => i.id === reqId);
                         return stockItem ? stockItem.qty : 0;
                     });
-                    maxAssembly = Math.min(...possibleCounts);
+                    maxAssembly = Math.min(...counts);
                 }
 
+                const deficit = kmch.target - maxAssembly;
                 const assignedNames = kmch.requiredIds.map(id => {
                     const found = items.find(i => i.id === id);
-                    return found ? `<span class="inline-block bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-md mr-1 mb-1">${found.name} (${found.qty} шт)</span>` : '';
+                    return found ? `<span class="inline-block bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-md mr-1 mb-1">${found.name}: <b>${found.qty} шт</b></span>` : '';
                 }).join('');
 
                 return `
                     <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between space-y-4">
                         <div>
                             <div class="flex justify-between items-start">
-                                <h4 class="font-bold text-slate-900 text-base">${kmch.name}</h4>
-                                <button onclick="openKmchConfig('${kmch.id}')" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-lg transition">
-                                    ⚙️ Привязать расходники
-                                </button>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-base">${kmch.name}</h4>
+                                    <p class="text-xs text-slate-500">План по сборке: <span class="font-bold text-slate-800">${kmch.target} шт</span></p>
+                                </div>
+                                ${currentUser.role === 'admin' ? `
+                                <button onclick="openKmchConfig('${kmch.id}')" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-lg">⚙️ Настроить</button>` : ''}
                             </div>
                             <div class="mt-2 text-xs text-slate-500">
-                                <span class="font-semibold text-slate-700">Необходимые компоненты:</span><br>
-                                <div class="mt-1 flex flex-wrap">${assignedNames || '<span class="text-slate-400 italic">компоненты не выбраны</span>'}</div>
+                                <span class="font-semibold text-slate-700">Компоненты на складе:</span><br>
+                                <div class="mt-1 flex flex-wrap">${assignedNames || '<span class="text-slate-400 italic">компоненты не привязаны</span>'}</div>
                             </div>
                         </div>
-                        <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 flex justify-between items-center">
-                            <span class="text-xs font-bold text-blue-900">Можно собрать готовых КМЧ:</span>
-                            <span class="text-xl font-black text-blue-700">${maxAssembly} шт</span>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-blue-50 border border-blue-100 rounded-xl p-3">
+                                <span class="text-[10px] font-bold text-blue-800 block uppercase">Можно сделать:</span>
+                                <span class="text-xl font-black text-blue-700">${maxAssembly} шт</span>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-100 rounded-xl p-3">
+                                <span class="text-[10px] font-bold text-amber-800 block uppercase">Не хватает до плана:</span>
+                                <span class="text-xl font-black text-amber-700">${deficit > 0 ? deficit + ' шт' : 'План выполнен! 🎉'}</span>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -562,45 +644,41 @@
         function saveKmchConfig() {
             const kmch = kmchList.find(k => k.id === currentEditingKmchId);
             if (!kmch) return;
-
             const checkboxes = document.querySelectorAll('.kmch-check');
             const selectedIds = [];
-            checkboxes.forEach(cb => {
-                if (cb.checked) selectedIds.push(cb.value);
-            });
+            checkboxes.forEach(cb => { if (cb.checked) selectedIds.push(cb.value); });
 
             kmch.requiredIds = selectedIds;
             saveData();
             closeKmchConfigModal();
             renderCalculator();
-            alert('Связки успешно сохранены!');
         }
 
-        // Логи
+        // История
         function renderLogs() {
             const tbody = document.getElementById('logsTableBody');
             if (logs.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400">История пуста</td></tr>`;
                 return;
             }
-
             tbody.innerHTML = logs.map(log => `
-                <tr class="hover:bg-slate-50/80 transition">
+                <tr class="hover:bg-slate-50/85 transition">
                     <td class="p-3 sm:p-4 text-xs text-slate-500 whitespace-nowrap">${log.time}</td>
-                    <td class="p-3 sm:p-4 font-semibold text-xs text-slate-700">${log.user}</td>
+                    <td class="p-3 sm:p-4 font-bold text-xs text-blue-700">${log.user}</td>
                     <td class="p-3 sm:p-4 text-slate-800">${log.text}</td>
                 </tr>
             `).join('');
         }
 
         function clearLogs() {
-            if (!confirm('Очистить весь журнал истории?')) return;
+            if (!confirm('Очистить историю?')) return;
             logs = [];
             saveData();
             renderLogs();
         }
 
-        // Первичный запуск
+        // Старт
+        updateUIRoles();
         renderAll();
     </script>
 </body>
