@@ -94,7 +94,7 @@
         </section>
 
         <!-- СЕКЦИЯ 2: ПЛАН И КАЛЬКУЛЯТОР КМЧ -->
-        <section id="section-calculator" class="space-y-6">
+        <section id="section-calculator" class="space-y-6 hidden">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-6">
                 <div>
                     <h2 class="text-lg font-bold text-slate-900">План сборки КМЧ и Калькулятор запасов</h2>
@@ -199,7 +199,7 @@
 
     </main>
 
-    <!-- МОДАЛЬНОЕ ОКНО ВХОДА (ВЫБОР ПОЛЬЗОВАТЕЛЯ ИЛИ АДМИНА) -->
+    <!-- МОДАЛЬНОЕ ОКНО ВХОДА -->
     <div id="loginModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
             <h3 class="text-base font-bold text-slate-900">Авторизация в системе</h3>
@@ -260,8 +260,7 @@
     </div>
 
     <script>
-        // Инициализация данных
-        let currentUser = { name: 'Гость', role: 'guest' }; // role: 'admin' or 'employee' or 'guest'
+        let currentUser = { name: 'Гость', role: 'guest' };
 
         let items = JSON.parse(localStorage.getItem('kmch_items')) || [
             { id: '1', name: 'Резьба приварная 32Ду', qty: 50, top: true },
@@ -272,8 +271,8 @@
         ];
 
         let employees = JSON.parse(localStorage.getItem('kmch_employees')) || [
-            { id: 'e1', name: 'Иван (Сотрудник)', pass: '111' },
-            { id: 'e2', name: 'Петр (Сотрудник)', pass: '222' }
+            { id: 'e1', name: 'Иван', pass: '111' },
+            { id: 'e2', name: 'Петр', pass: '222' }
         ];
 
         let kmchList = JSON.parse(localStorage.getItem('kmch_products')) || [
@@ -281,7 +280,7 @@
         ];
 
         let logs = JSON.parse(localStorage.getItem('kmch_logs')) || [
-            { time: '16.11.2026 10:00', user: Система, text: 'Инициализация системы' }
+            { time: '16.11.2026 10:00', user: 'Система', text: 'Инициализация системы' }
         ];
 
         let currentModalAction = null;
@@ -303,12 +302,7 @@
             saveData();
         }
 
-        // Управление вкладками
         function switchTab(tabId) {
-            if (tabId === 'admin' && currentUser.role !== 'admin') {
-                openLoginModal();
-                return;
-            }
             activeTab = tabId;
             ['warehouse', 'calculator', 'admin', 'logs'].forEach(t => {
                 const sec = document.getElementById('section-' + t);
@@ -324,9 +318,7 @@
             renderAll();
         }
 
-        // Авторизация
         function openLoginModal() {
-            // Заполнить селект сотрудниками
             const sel = document.getElementById('employeeSelectLogin');
             sel.innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
             if(employees.length === 0) sel.innerHTML = '<option value="">Нет сотрудников</option>';
@@ -354,14 +346,8 @@
             const pass = document.getElementById('employeePasswordInput').value;
             const emp = employees.find(e => e.id === empId);
 
-            if (!emp) {
-                alert('Выберите сотрудника');
-                return;
-            }
-            if (emp.pass !== pass) {
-                alert('Неверный пароль сотрудника!');
-                return;
-            }
+            if (!emp) { alert('Выберите сотрудника'); return; }
+            if (emp.pass !== pass) { alert('Неверный пароль сотрудника!'); return; }
 
             currentUser = { name: emp.name, role: 'employee' };
             finalizeLogin(`Вход сотрудника: ${emp.name}`);
@@ -403,7 +389,6 @@
             }
         }
 
-        // Рендеринг
         function renderAll() {
             renderTopSummary();
             renderWarehouse();
@@ -462,6 +447,7 @@
             const item = items.find(i => i.id === id);
             if (!item) return;
             currentModalAction = { type, id };
+            document.getElementById('modalTitleinnerText').innerText = type === 'add' ? 'Пополнение запаса' : 'Списание со склада';
             document.getElementById('modalTitle').innerText = type === 'add' ? 'Пополнение запаса' : 'Списание со склада';
             document.getElementById('modalItemName').innerText = item.name;
             document.getElementById('modalInputQty').value = 1;
@@ -495,7 +481,6 @@
             renderAll();
         }
 
-        // Админка: создание позиций и сотрудников
         function adminAddNewItem() {
             const name = document.getElementById('adminItemName').value.trim();
             const qty = parseInt(document.getElementById('adminItemQty').value) || 0;
@@ -554,7 +539,6 @@
             `).join('');
         }
 
-        // План и Калькулятор КМЧ
         function createKmchItem() {
             const name = document.getElementById('newKmchName').value.trim();
             const target = parseInt(document.getElementById('newKmchTarget').value) || 50;
@@ -654,7 +638,6 @@
             renderCalculator();
         }
 
-        // История
         function renderLogs() {
             const tbody = document.getElementById('logsTableBody');
             if (logs.length === 0) {
@@ -677,7 +660,6 @@
             renderLogs();
         }
 
-        // Старт
         updateUIRoles();
         renderAll();
     </script>
