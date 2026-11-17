@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Учет расходников КМЧ</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        button, input, select {
-            touch-action: manipulation;
-        }
+        button, input, select { touch-action: manipulation; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
@@ -25,60 +22,64 @@
                 </div>
             </div>
 
-            <!-- Навигационные вкладки -->
             <nav class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto py-1">
-                <button onclick="switchTab('warehouse')" id="tab-warehouse" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-blue-600 text-white whitespace-nowrap">
-                    Склад
-                </button>
-                <button onclick="switchTab('calculator')" id="tab-calculator" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">
-                    План КМЧ
-                </button>
-                <button onclick="switchTab('reports')" id="tab-reports" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">
-                    Мои результаты
-                </button>
-                <button onclick="switchTab('admin')" id="tab-admin" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap hidden admin-only">
-                    Админка
-                </button>
-                <button onclick="switchTab('logs')" id="tab-logs" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">
-                    История
-                </button>
+                <button onclick="switchTab('warehouse')" id="tab-warehouse" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-blue-600 text-white whitespace-nowrap">Склад</button>
+                <button onclick="switchTab('calculator')" id="tab-calculator" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">План КМЧ</button>
+                <button onclick="switchTab('reports')" id="tab-reports" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Мои результаты</button>
+                <button onclick="switchTab('admin')" id="tab-admin" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap hidden admin-only">Админка</button>
+                <button onclick="switchTab('logs')" id="tab-logs" class="px-3 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">История</button>
             </nav>
 
-            <!-- Кнопка входа / профиля -->
             <div class="flex items-center space-x-2">
                 <span id="activeUserBadge" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 hidden"></span>
-                <button id="authBtn" onclick="openLoginModal()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition active:scale-95 shadow-sm">
-                    🔑 Войти
-                </button>
+                <button id="authBtn" onclick="openLoginModal()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition active:scale-95 shadow-sm">🔑 Войти</button>
             </div>
         </div>
     </header>
 
-    <!-- Основной контент -->
     <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full space-y-6">
 
         <!-- СЕКЦИЯ 1: СКЛАД -->
         <section id="section-warehouse" class="space-y-6">
-            <!-- Премиум-блок ключевых позиций -->
             <div class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-2xl p-5 text-white shadow-lg">
                 <h2 class="text-xs uppercase tracking-wider text-blue-200 font-semibold mb-3">Главные позиции в наличии</h2>
-                <div id="topSummaryBlock" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    <!-- Заполняется JS -->
-                </div>
+                <div id="topSummaryBlock" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"></div>
             </div>
 
-            <!-- Список расходников -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <!-- Переключатель под-режимов -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-1.5 flex gap-1">
+                <button onclick="switchWarehouseView('general')" id="whViewBtn-general" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition bg-blue-600 text-white shadow-sm">📦 Общий склад</button>
+                <button onclick="switchWarehouseView('byKmch')" id="whViewBtn-byKmch" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50">🔧 По изделиям КМЧ</button>
+            </div>
+
+            <!-- ОБЩИЙ СКЛАД -->
+            <div id="warehouseGeneralView" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 sm:p-5 border-b border-slate-100 space-y-3">
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">Список всех расходников</h3>
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                            Общий список расходников
+                            <span id="lowStockCountBadge" class="hidden px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded-full"></span>
+                        </h3>
                         <p class="text-xs text-slate-500">Пополняйте или списывайте позиции по факту работы</p>
                     </div>
-                    <div class="w-full sm:w-72">
-                        <input type="text" id="searchStockInput" oninput="renderWarehouse()" placeholder="🔍 Поиск по названию..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                        <input type="text" id="searchStockInput" oninput="renderWarehouseGeneral()" placeholder="🔍 Поиск по названию..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="warehouseSortSelect" onchange="renderWarehouseGeneral()" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="name_asc">По названию (А-Я)</option>
+                            <option value="name_desc">По названию (Я-А)</option>
+                            <option value="qty_asc">⚠️ Сначала заканчивающиеся</option>
+                            <option value="qty_desc">Сначала с большим запасом</option>
+                            <option value="category">📁 По категориям</option>
+                        </select>
+                        <select id="warehouseCategoryFilter" onchange="renderWarehouseGeneral()" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="all">Все категории</option>
+                        </select>
+                        <label class="flex items-center space-x-2 px-3.5 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 cursor-pointer select-none">
+                            <input type="checkbox" id="lowStockOnlyCheck" onchange="renderWarehouseGeneral()" class="w-4 h-4 text-amber-600 rounded border-amber-300">
+                            <span class="font-semibold">⚠️ Только заканчивающиеся</span>
+                        </label>
                     </div>
                 </div>
-
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -88,11 +89,20 @@
                                 <th class="p-3 sm:p-4 font-semibold text-right">Действия</th>
                             </tr>
                         </thead>
-                        <tbody id="warehouseTableBody" class="divide-y divide-slate-100 text-sm">
-                            <!-- Заполняется JS -->
-                        </tbody>
+                        <tbody id="warehouseTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- ПО ИЗДЕЛИЯМ КМЧ -->
+            <div id="warehouseByKmchView" class="hidden space-y-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">🔧 Изделие КМЧ:</label>
+                        <select id="warehouseKmchSelect" onchange="renderWarehouseByKmch()" class="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                    </div>
+                </div>
+                <div id="warehouseByKmchContent"></div>
             </div>
         </section>
 
@@ -104,7 +114,6 @@
                     <p class="text-xs text-slate-500">Следите за прогрессом выполнения плана. При фиксации сборки компоненты автоматически списываются со склада.</p>
                 </div>
 
-                <!-- Блок создания КМЧ (Только Админ) -->
                 <div id="adminKmchCreateBlock" class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end hidden admin-only-section">
                     <div class="sm:col-span-2">
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Название КМЧ изделия</label>
@@ -115,16 +124,11 @@
                         <input type="number" id="newKmchTarget" value="50" min="0" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none">
                     </div>
                     <div>
-                        <button onclick="createKmchItem()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition shadow-sm">
-                            ➕ Создать план
-                        </button>
+                        <button onclick="createKmchItem()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition shadow-sm">➕ Создать план</button>
                     </div>
                 </div>
 
-                <!-- Список задач КМЧ -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="kmchCalculationsList">
-                    <!-- Заполняется JS -->
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="kmchCalculationsList"></div>
             </div>
         </section>
 
@@ -136,7 +140,6 @@
                         <h3 id="reportTitle" class="text-base font-bold text-slate-900">Мои результаты сборки КМЧ</h3>
                         <p id="reportSubtitle" class="text-xs text-slate-500">Список ваших собранных изделий</p>
                     </div>
-                    <!-- Элементы сортировки (Видны Админу) -->
                     <div id="adminSortContainer" class="flex items-center space-x-2 hidden admin-only-section">
                         <label class="text-xs font-semibold text-slate-600">Сортировка:</label>
                         <select id="reportSortSelect" onchange="renderEmployeeRecords()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none">
@@ -157,9 +160,7 @@
                                 <th class="p-3 sm:p-4 font-semibold text-right">Коррекция</th>
                             </tr>
                         </thead>
-                        <tbody id="employeeRecordsTableBody" class="divide-y divide-slate-100 text-sm">
-                            <!-- Заполняется JS -->
-                        </tbody>
+                        <tbody id="employeeRecordsTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
                     </table>
                 </div>
             </div>
@@ -168,36 +169,41 @@
         <!-- СЕКЦИЯ 4: УПРАВЛЕНИЕ АДМИНА -->
         <section id="section-admin" class="space-y-6 hidden admin-only-section">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Добавление расходника -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4">
                     <h3 class="text-base font-bold text-slate-900">Добавить новый расходник</h3>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Название</label>
                         <input type="text" id="adminItemName" placeholder="например: Штуцер 32 Ду" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
                     </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Количество</label>
+                            <input type="number" id="adminItemQty" value="0" min="0" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Мин. остаток (порог)</label>
+                            <input type="number" id="adminItemMinQty" value="10" min="0" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none" title="Порог, ниже которого позиция считается «заканчивающейся»">
+                        </div>
+                    </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Количество</label>
-                        <input type="number" id="adminItemQty" value="0" min="0" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Категория</label>
+                        <input type="text" id="adminItemCategory" list="adminCategoryList" placeholder="например: СГМН, G25, Общее" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
+                        <datalist id="adminCategoryList"></datalist>
                     </div>
                     <label class="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer pt-1">
                         <input type="checkbox" id="adminItemTop" class="w-4 h-4 text-blue-600 rounded border-slate-300">
                         <span class="font-medium">Отображать в верхнем премиум-блоке</span>
                     </label>
-                    <button onclick="adminAddNewItem()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm rounded-xl transition shadow-sm">
-                        Создать позицию
-                    </button>
+                    <button onclick="adminAddNewItem()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm rounded-xl transition shadow-sm">Создать позицию</button>
                 </div>
 
-                <!-- Управление сотрудниками -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4">
                     <h3 class="text-base font-bold text-slate-900">Управление сотрудниками</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input type="text" id="newEmpName" placeholder="Имя (например: Иван)" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
                         <input type="text" id="newEmpPass" placeholder="Пароль" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
                     </div>
-                    <button onclick="adminAddEmployee()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition shadow-sm">
-                        ➕ Добавить сотрудника
-                    </button>
+                    <button onclick="adminAddEmployee()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition shadow-sm">➕ Добавить сотрудника</button>
                     <div class="border-t border-slate-100 pt-3">
                         <p class="text-xs font-semibold text-slate-500 mb-2">Список сотрудников:</p>
                         <div id="employeesListContainer" class="space-y-2 max-h-40 overflow-y-auto"></div>
@@ -214,9 +220,7 @@
                         <h3 class="text-base font-bold text-slate-900">Журнал аудита действий</h3>
                         <p class="text-xs text-slate-500">Кто и с какого аккаунта вносил изменения</p>
                     </div>
-                    <button onclick="clearLogs()" class="px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 text-xs font-medium rounded-lg transition">
-                        Очистить историю
-                    </button>
+                    <button onclick="clearLogs()" class="px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 text-xs font-medium rounded-lg transition">Очистить историю</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -232,7 +236,6 @@
                 </div>
             </div>
         </section>
-
     </main>
 
     <!-- МОДАЛЬНОЕ ОКНО ВХОДА -->
@@ -240,7 +243,6 @@
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
             <h3 class="text-base font-bold text-slate-900">Авторизация в системе</h3>
             <p class="text-xs text-slate-500">Выберите аккаунт для входа:</p>
-            
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Войти как Администратор</label>
@@ -249,7 +251,6 @@
                         <button onclick="loginAsAdmin()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-xl transition">ОК</button>
                     </div>
                 </div>
-
                 <div class="border-t border-slate-100 pt-3">
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Или выберите сотрудника</label>
                     <select id="employeeSelectLogin" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none mb-2"></select>
@@ -257,12 +258,11 @@
                     <button onclick="loginAsEmployee()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition">Войти как сотрудник</button>
                 </div>
             </div>
-
             <button onclick="closeLoginModal()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl transition">Закрыть</button>
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ИЗМЕНЕНИЯ КОЛИЧЕСТВА СКЛАДА -->
+    <!-- МОДАЛКА ОСТАТКА -->
     <div id="actionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
             <h3 id="modalTitle" class="text-base font-bold text-slate-900">Изменение остатка</h3>
@@ -278,7 +278,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ФИКСАЦИИ СБОРКИ КМЧ -->
+    <!-- МОДАЛКА СБОРКИ -->
     <div id="assembleKmchModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
             <h3 id="assembleModalTitle" class="text-base font-bold text-slate-900">Сборка КМЧ изделий</h3>
@@ -295,7 +295,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО НАСТРОЙКИ КОМПОНЕНТОВ КМЧ (ТОЛЬКО АДМИН) -->
+    <!-- МОДАЛКА КОМПОНЕНТОВ КМЧ -->
     <div id="kmchConfigModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
             <h3 class="text-base font-bold text-slate-900">Настройка состава КМЧ</h3>
@@ -318,6 +318,12 @@
             { id: '4', name: 'Прокладка паронитовая 32', qty: 120, top: false },
             { id: '5', name: 'Гайка накидная G 1 1/4', qty: 85, top: false }
         ];
+        // Миграция: добавляем категорию и порог
+        items = items.map(i => ({
+            ...i,
+            category: i.category || 'Общее',
+            minQty: (i.minQty === undefined || i.minQty === null) ? 10 : i.minQty
+        }));
 
         let employees = JSON.parse(localStorage.getItem('kmch_employees')) || [
             { id: 'e1', name: 'Иван', pass: '111' },
@@ -329,7 +335,6 @@
         ];
 
         let employeeRecords = JSON.parse(localStorage.getItem('kmch_emp_records')) || [];
-
         let logs = JSON.parse(localStorage.getItem('kmch_logs')) || [
             { time: '16.11.2026 10:00', user: 'Система', text: 'Инициализация системы' }
         ];
@@ -338,6 +343,7 @@
         let currentEditingKmchId = null;
         let currentAssembleKmchId = null;
         let activeTab = 'warehouse';
+        let activeWarehouseView = 'general';
 
         function saveData() {
             localStorage.setItem('kmch_items', JSON.stringify(items));
@@ -368,10 +374,10 @@
                 if (sec) {
                     if (t === tabId) {
                         sec.classList.remove('hidden');
-                        if(btn) btn.className = "px-3.5 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-blue-600 text-white whitespace-nowrap shadow-sm";
+                        if (btn) btn.className = "px-3.5 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-blue-600 text-white whitespace-nowrap shadow-sm";
                     } else {
                         sec.classList.add('hidden');
-                        if(btn) btn.className = "px-3.5 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap";
+                        if (btn) btn.className = "px-3.5 py-2 sm:px-4 rounded-lg font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap";
                     }
                 }
             });
@@ -380,35 +386,29 @@
 
         function openLoginModal() {
             const sel = document.getElementById('employeeSelectLogin');
-            sel.innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-            if(employees.length === 0) sel.innerHTML = '<option value="">Нет сотрудников</option>';
+            sel.innerHTML = employees.length
+                ? employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('')
+                : '<option value="">Нет сотрудников</option>';
             document.getElementById('adminPasswordInput').value = '';
             document.getElementById('employeePasswordInput').value = '';
             document.getElementById('loginModal').classList.remove('hidden');
         }
-
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.add('hidden');
-        }
+        function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
 
         function loginAsAdmin() {
             const pass = document.getElementById('adminPasswordInput').value;
             if (pass === '89288854667') {
                 currentUser = { name: 'Администратор', role: 'admin' };
                 finalizeLogin("Успешный вход как Администратор");
-            } else {
-                alert('Неверный пароль администратора!');
-            }
+            } else { alert('Неверный пароль администратора!'); }
         }
 
         function loginAsEmployee() {
             const empId = document.getElementById('employeeSelectLogin').value;
             const pass = document.getElementById('employeePasswordInput').value;
             const emp = employees.find(e => e.id === empId);
-
             if (!emp) { alert('Выберите сотрудника'); return; }
             if (emp.pass !== pass) { alert('Неверный пароль сотрудника!'); return; }
-
             currentUser = { name: emp.name, role: 'employee' };
             finalizeLogin(`Вход сотрудника: ${emp.name}`);
         }
@@ -425,8 +425,9 @@
             const authBtn = document.getElementById('authBtn');
             const badge = document.getElementById('activeUserBadge');
 
-            subtitle.innerText = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'employee' ? 'Сотрудник: ' + currentUser.name : 'Гость (требуется вход)');
-            
+            subtitle.innerText = currentUser.role === 'admin' ? 'Администратор'
+                : (currentUser.role === 'employee' ? 'Сотрудник: ' + currentUser.name : 'Гость (требуется вход)');
+
             if (currentUser.role !== 'guest') {
                 badge.innerText = currentUser.name;
                 badge.classList.remove('hidden');
@@ -438,7 +439,6 @@
 
             const adminSections = document.querySelectorAll('.admin-only-section');
             const adminTabs = document.querySelectorAll('.admin-only');
-
             if (currentUser.role === 'admin') {
                 adminSections.forEach(el => el.classList.remove('hidden'));
                 adminTabs.forEach(el => el.classList.remove('hidden'));
@@ -456,8 +456,10 @@
             renderEmployeeRecords();
             renderAdminEmployees();
             renderLogs();
+            updateCategoryDatalist();
         }
 
+        /* ---------- СКЛАД: ВЕРХНИЙ БЛОК ---------- */
         function renderTopSummary() {
             const container = document.getElementById('topSummaryBlock');
             const topItems = items.filter(i => i.top);
@@ -465,45 +467,285 @@
                 container.innerHTML = '<p class="text-xs text-blue-200 col-span-full">Нет позиций в верхнем блоке.</p>';
                 return;
             }
-            container.innerHTML = topItems.map(item => `
-                <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 flex flex-col justify-between">
-                    <span class="text-xs text-blue-100 font-medium truncate">${item.name}</span>
-                    <span class="text-2xl font-black mt-2">${item.qty} <span class="text-xs font-normal text-blue-200">шт</span></span>
-                </div>
-            `).join('');
+            container.innerHTML = topItems.map(item => {
+                const isLow = item.qty <= (item.minQty || 0);
+                return `
+                    <div class="backdrop-blur-md rounded-xl p-3 border flex flex-col justify-between ${isLow ? 'bg-red-500/25 border-red-300/50' : 'bg-white/10 border-white/10'}">
+                        <span class="text-xs text-blue-100 font-medium truncate" title="${item.name}">${item.name}</span>
+                        <span class="text-2xl font-black mt-2">${item.qty} <span class="text-xs font-normal text-blue-200">шт</span></span>
+                        ${isLow ? '<span class="text-[10px] text-red-100 font-bold mt-1">⚠️ Заканчивается</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /* ---------- ПЕРЕКЛЮЧАТЕЛЬ ПОД-РЕЖИМОВ СКЛАДА ---------- */
+        function switchWarehouseView(view) {
+            activeWarehouseView = view;
+            const generalBtn = document.getElementById('whViewBtn-general');
+            const byKmchBtn = document.getElementById('whViewBtn-byKmch');
+            const generalView = document.getElementById('warehouseGeneralView');
+            const byKmchView = document.getElementById('warehouseByKmchView');
+
+            if (view === 'general') {
+                generalView.classList.remove('hidden');
+                byKmchView.classList.add('hidden');
+                generalBtn.className = "flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition bg-blue-600 text-white shadow-sm";
+                byKmchBtn.className = "flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50";
+            } else {
+                generalView.classList.add('hidden');
+                byKmchView.classList.remove('hidden');
+                generalBtn.className = "flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50";
+                byKmchBtn.className = "flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition bg-blue-600 text-white shadow-sm";
+            }
+            renderWarehouse();
         }
 
         function renderWarehouse() {
-            const query = document.getElementById('searchStockInput').value.toLowerCase();
+            updateCategoryFilterOptions();
+            if (activeWarehouseView === 'general') {
+                renderWarehouseGeneral();
+            } else {
+                populateKmchStockSelect();
+                renderWarehouseByKmch();
+            }
+        }
+
+        /* ---------- ОБЩИЙ СКЛАД ---------- */
+        function updateCategoryFilterOptions() {
+            const sel = document.getElementById('warehouseCategoryFilter');
+            if (!sel) return;
+            const current = sel.value;
+            const categories = [...new Set(items.map(i => i.category || 'Общее'))].sort();
+            sel.innerHTML = '<option value="all">Все категории</option>' +
+                categories.map(c => {
+                    const count = items.filter(i => (i.category || 'Общее') === c).length;
+                    return `<option value="${c}">📁 ${c} (${count})</option>`;
+                }).join('');
+            if (current && (current === 'all' || categories.includes(current))) sel.value = current;
+        }
+
+        function updateCategoryDatalist() {
+            const dl = document.getElementById('adminCategoryList');
+            if (!dl) return;
+            const categories = [...new Set(items.map(i => i.category || 'Общее'))].sort();
+            dl.innerHTML = categories.map(c => `<option value="${c}">`).join('');
+        }
+
+        function renderWarehouseGeneral() {
+            const query = (document.getElementById('searchStockInput').value || '').toLowerCase();
+            const sortVal = document.getElementById('warehouseSortSelect').value;
+            const catFilter = document.getElementById('warehouseCategoryFilter').value;
+            const lowOnly = document.getElementById('lowStockOnlyCheck').checked;
             const tbody = document.getElementById('warehouseTableBody');
-            const filtered = items.filter(i => i.name.toLowerCase().includes(query));
+
+            // Бейдж количества заканчивающихся
+            const lowCount = items.filter(i => i.qty <= (i.minQty || 0)).length;
+            const badge = document.getElementById('lowStockCountBadge');
+            if (lowCount > 0) {
+                badge.innerText = `⚠️ ${lowCount} заканчивается`;
+                badge.classList.remove('hidden');
+            } else { badge.classList.add('hidden'); }
+
+            let filtered = items.filter(i => {
+                if (!i.name.toLowerCase().includes(query)) return false;
+                if (catFilter !== 'all' && (i.category || 'Общее') !== catFilter) return false;
+                if (lowOnly && i.qty > (i.minQty || 0)) return false;
+                return true;
+            });
+
+            if (sortVal === 'name_asc') filtered.sort((a, b) => a.name.localeCompare(b.name));
+            else if (sortVal === 'name_desc') filtered.sort((a, b) => b.name.localeCompare(a.name));
+            else if (sortVal === 'qty_asc') filtered.sort((a, b) => a.qty - b.qty);
+            else if (sortVal === 'qty_desc') filtered.sort((a, b) => b.qty - a.qty);
+            else if (sortVal === 'category') filtered.sort((a, b) =>
+                (a.category || 'Общее').localeCompare(b.category || 'Общее') || a.name.localeCompare(b.name)
+            );
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400">Ничего не найдено</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400">Ничего не найдено по выбранным фильтрам</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = filtered.map(item => `
-                <tr class="hover:bg-slate-50/85 transition">
-                    <td class="p-3 sm:p-4 font-medium text-slate-900">
-                        ${item.name}
-                        ${item.top ? '<span class="ml-2 px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded">Топ</span>' : ''}
-                    </td>
-                    <td class="p-3 sm:p-4 text-center font-bold text-slate-700">${item.qty} шт</td>
-                    <td class="p-3 sm:p-4 text-right space-x-2">
-                        <button onclick="openActionModal('add', '${item.id}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg transition active:scale-95 shadow-sm">
-                            ➕ Пополнить
-                        </button>
-                        <button onclick="openActionModal('sub', '${item.id}')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold rounded-lg transition active:scale-95 shadow-sm">
-                            ➖ Списать
-                        </button>
-                        ${currentUser.role === 'admin' ? `
-                        <button onclick="deleteItem('${item.id}')" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg">🗑️</button>` : ''}
-                    </td>
-                </tr>
-            `).join('');
+            if (sortVal === 'category') {
+                const groups = {};
+                filtered.forEach(i => {
+                    const cat = i.category || 'Общее';
+                    (groups[cat] = groups[cat] || []).push(i);
+                });
+                let html = '';
+                Object.keys(groups).sort().forEach(cat => {
+                    html += `<tr class="bg-slate-100/80"><td colspan="3" class="p-2 sm:px-4 font-bold text-slate-700 text-xs uppercase tracking-wider">📁 ${cat} <span class="text-slate-400 font-normal">(${groups[cat].length})</span></td></tr>`;
+                    html += groups[cat].map(renderWarehouseRow).join('');
+                });
+                tbody.innerHTML = html;
+            } else {
+                tbody.innerHTML = filtered.map(renderWarehouseRow).join('');
+            }
         }
 
+        function renderWarehouseRow(item) {
+            const isLow = item.qty <= (item.minQty || 0);
+            const usedIn = kmchList.filter(k => k.requiredIds.includes(item.id)).map(k => k.name);
+            const usedInText = usedIn.length > 2
+                ? usedIn.slice(0, 2).join(', ') + ` +${usedIn.length - 2}`
+                : usedIn.join(', ');
+
+            return `
+                <tr class="hover:bg-slate-50/85 transition ${isLow ? 'bg-red-50/40' : ''}">
+                    <td class="p-3 sm:p-4">
+                        <div class="font-medium text-slate-900 flex items-center flex-wrap gap-1.5">
+                            ${item.name}
+                            ${item.top ? '<span class="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded">Топ</span>' : ''}
+                            ${isLow ? '<span class="px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded">⚠️ Заканчивается</span>' : ''}
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded">📁 ${item.category || 'Общее'}</span>
+                            ${usedIn.length > 0 ? `<span class="text-[10px] text-slate-400">используется в: ${usedInText}</span>` : ''}
+                        </div>
+                    </td>
+                    <td class="p-3 sm:p-4 text-center">
+                        <div class="font-bold text-base ${isLow ? 'text-red-600' : 'text-slate-700'}">${item.qty} шт</div>
+                        <div class="text-[10px] text-slate-400">мин: ${item.minQty || 0}</div>
+                    </td>
+                    <td class="p-3 sm:p-4 text-right space-x-2 whitespace-nowrap">
+                        <button onclick="openActionModal('add', '${item.id}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg transition active:scale-95 shadow-sm">➕ Пополнить</button>
+                        <button onclick="openActionModal('sub', '${item.id}')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold rounded-lg transition active:scale-95 shadow-sm">➖ Списать</button>
+                        ${currentUser.role === 'admin' ? `<button onclick="deleteItem('${item.id}')" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg">🗑️</button>` : ''}
+                    </td>
+                </tr>
+            `;
+        }
+
+        /* ---------- ВИТРИНА «ПО ИЗДЕЛИЯМ КМЧ» ---------- */
+        function populateKmchStockSelect() {
+            const sel = document.getElementById('warehouseKmchSelect');
+            if (!sel) return;
+            const currentVal = sel.value;
+            const active = kmchList.filter(k => !k.closed || currentUser.role === 'admin');
+            if (active.length === 0) {
+                sel.innerHTML = '<option value="">Нет активных изделий</option>';
+                return;
+            }
+            sel.innerHTML = active.map(k =>
+                `<option value="${k.id}">${k.name}${k.closed ? ' (закрыта)' : ''}</option>`
+            ).join('');
+            if (currentVal && active.find(k => k.id === currentVal)) sel.value = currentVal;
+        }
+
+        function renderWarehouseByKmch() {
+            const sel = document.getElementById('warehouseKmchSelect');
+            const container = document.getElementById('warehouseByKmchContent');
+            const kmchId = sel.value;
+
+            if (!kmchId) {
+                container.innerHTML = `<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center text-slate-400">
+                    <div class="text-3xl mb-2">🔧</div>
+                    <p class="text-sm">Нет активных изделий КМЧ</p>
+                    <p class="text-xs mt-1">Администратор должен создать план КМЧ</p>
+                </div>`;
+                return;
+            }
+            const kmch = kmchList.find(k => k.id === kmchId);
+            if (!kmch) { container.innerHTML = ''; return; }
+
+            const components = kmch.requiredIds.map(id => items.find(i => i.id === id)).filter(Boolean);
+            if (components.length === 0) {
+                container.innerHTML = `<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center text-slate-400">
+                    <div class="text-3xl mb-2">⚙️</div>
+                    <p class="text-sm">Компоненты не привязаны</p>
+                    <p class="text-xs mt-1">Администратор должен настроить состав изделия «${kmch.name}»</p>
+                </div>`;
+                return;
+            }
+
+            const totalAssembled = employeeRecords.filter(r => r.kmchId === kmch.id).reduce((s, r) => s + r.count, 0);
+            const remaining = Math.max((kmch.target || 0) - totalAssembled, 0);
+            const maxBuild = Math.min(...components.map(c => c.qty));
+
+            const rows = components.map(c => {
+                const isLow = c.qty <= (c.minQty || 0);
+                const enough = remaining === 0 || c.qty >= remaining;
+                const shortBy = remaining > c.qty ? remaining - c.qty : 0;
+                return `
+                    <tr class="hover:bg-slate-50/85 transition ${isLow ? 'bg-red-50/30' : ''}">
+                        <td class="p-3 sm:p-4">
+                            <div class="font-medium text-slate-900">${c.name}</div>
+                            ${c.category ? `<span class="text-[10px] text-slate-400">📁 ${c.category}</span>` : ''}
+                        </td>
+                        <td class="p-3 sm:p-4 text-center">
+                            <div class="font-bold text-base ${isLow ? 'text-red-600' : 'text-slate-700'}">${c.qty} шт</div>
+                            ${isLow ? `<div class="text-[10px] text-red-500 font-semibold">⚠️ мало (мин: ${c.minQty || 0})</div>` : ''}
+                        </td>
+                        <td class="p-3 sm:p-4 text-center text-xs">
+                            ${remaining === 0
+                                ? '<span class="text-slate-400">План выполнен 🎉</span>'
+                                : (enough
+                                    ? '<span class="text-emerald-600 font-semibold">✅ Достаточно</span>'
+                                    : `<span class="text-red-600 font-semibold">❌ Не хватает ${shortBy} шт</span>`)}
+                        </td>
+                        <td class="p-3 sm:p-4 text-right space-x-1 whitespace-nowrap">
+                            <button onclick="openActionModal('add', '${c.id}')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg" title="Пополнить">➕</button>
+                            <button onclick="openActionModal('sub', '${c.id}')" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold rounded-lg" title="Списать">➖</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const planStatus = remaining === 0
+                ? '<span class="text-emerald-300">✅ Выполнен</span>'
+                : (maxBuild >= remaining
+                    ? '<span class="text-emerald-300">✅ Хватает</span>'
+                    : '<span class="text-amber-300">⚠️ Нужно пополнить</span>');
+
+            container.innerHTML = `
+                <div class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-2xl p-5 text-white shadow-lg">
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <h3 class="text-xs uppercase tracking-wider text-blue-200 font-semibold">${kmch.name}${kmch.closed ? ' (закрыта)' : ''}</h3>
+                        ${!kmch.closed ? `<button onclick="openAssembleModal('${kmch.id}')" class="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg shadow-sm">🛠️ Собрать</button>` : ''}
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-white/10 backdrop-blur rounded-xl p-3 border border-white/10">
+                            <div class="text-[10px] uppercase text-blue-200 font-semibold">Собрано</div>
+                            <div class="text-xl sm:text-2xl font-black mt-1">${totalAssembled} / ${kmch.target || 0}</div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur rounded-xl p-3 border border-white/10">
+                            <div class="text-[10px] uppercase text-blue-200 font-semibold">Осталось по плану</div>
+                            <div class="text-xl sm:text-2xl font-black mt-1">${remaining} шт</div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur rounded-xl p-3 border border-white/10">
+                            <div class="text-[10px] uppercase text-blue-200 font-semibold">Можно собрать</div>
+                            <div class="text-xl sm:text-2xl font-black mt-1">${maxBuild} шт</div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur rounded-xl p-3 border border-white/10">
+                            <div class="text-[10px] uppercase text-blue-200 font-semibold">Статус плана</div>
+                            <div class="text-sm font-black mt-1">${planStatus}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-4">
+                    <div class="p-4 sm:p-5 border-b border-slate-100">
+                        <h4 class="font-bold text-slate-900">Компоненты для сборки</h4>
+                        <p class="text-xs text-slate-500">Только расходники, привязанные к этому изделию</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-100">
+                                    <th class="p-3 sm:p-4 font-semibold">Компонент</th>
+                                    <th class="p-3 sm:p-4 font-semibold text-center">На складе</th>
+                                    <th class="p-3 sm:p-4 font-semibold text-center">Статус по плану</th>
+                                    <th class="p-3 sm:p-4 font-semibold text-right">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-sm">${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        /* ---------- МОДАЛКА ОСТАТКА ---------- */
         function openActionModal(type, id) {
             if (currentUser.role === 'guest') { alert('Пожалуйста, войдите в систему!'); openLoginModal(); return; }
             const item = items.find(i => i.id === id);
@@ -513,21 +755,15 @@
             document.getElementById('modalItemName').innerText = item.name;
             document.getElementById('modalInputQty').value = 1;
             document.getElementById('actionModal').classList.remove('hidden');
-
-            const confirmBtn = document.getElementById('modalConfirmBtn');
-            confirmBtn.onclick = submitActionModal;
+            document.getElementById('modalConfirmBtn').onclick = submitActionModal;
         }
-
-        function closeModal() {
-            document.getElementById('actionModal').classList.add('hidden');
-        }
+        function closeModal() { document.getElementById('actionModal').classList.add('hidden'); }
 
         function submitActionModal() {
             const val = parseInt(document.getElementById('modalInputQty').value);
             if (isNaN(val) || val <= 0) { alert('Введите число'); return; }
             const item = items.find(i => i.id === currentModalAction.id);
             if (!item) return;
-
             if (currentModalAction.type === 'add') {
                 item.qty += val;
                 addLog(`Пополнено «${item.name}» на +${val} шт.`);
@@ -536,12 +772,12 @@
                 item.qty -= val;
                 addLog(`Списано «${item.name}» на -${val} шт.`);
             }
-
             saveData();
             closeModal();
             renderAll();
         }
 
+        /* ---------- СБОРКА КМЧ ---------- */
         function openAssembleModal(kmchId) {
             if (currentUser.role === 'guest') { alert('Пожалуйста, войдите в систему!'); openLoginModal(); return; }
             const kmch = kmchList.find(k => k.id === kmchId);
@@ -555,25 +791,27 @@
             document.getElementById('assembleKmchQty').value = 1;
             document.getElementById('assembleKmchModal').classList.remove('hidden');
         }
-
-        function closeAssembleModal() {
-            document.getElementById('assembleKmchModal').classList.add('hidden');
-        }
+        function closeAssembleModal() { document.getElementById('assembleKmchModal').classList.add('hidden'); }
 
         function submitAssembleKmch() {
             const count = parseInt(document.getElementById('assembleKmchQty').value);
             if (isNaN(count) || count <= 0) { alert('Введите корректное число'); return; }
-
             const kmch = kmchList.find(k => k.id === currentAssembleKmchId);
             if (!kmch) return;
 
+            // Собираем ВСЕ недостатки сразу — удобнее, чем по одному
+            const shortages = [];
             for (let reqId of kmch.requiredIds) {
                 const stockItem = items.find(i => i.id === reqId);
-                const needed = count;
-                if (!stockItem || stockItem.qty < needed) {
-                    alert(`Недостаточно компонента "${stockItem ? stockItem.name : 'Неизвестно'}" на складе для сборки ${count} шт. КМЧ!`);
-                    return;
+                const have = stockItem ? stockItem.qty : 0;
+                if (have < count) {
+                    shortages.push({ name: stockItem ? stockItem.name : '?', need: count, have });
                 }
+            }
+            if (shortages.length > 0) {
+                alert('❌ Недостаточно компонентов:\n\n' +
+                    shortages.map(s => `• ${s.name}: нужно ${s.need} шт, есть ${s.have} шт`).join('\n'));
+                return;
             }
 
             let descParts = [];
@@ -592,7 +830,7 @@
                     employeeName: currentUser.name,
                     kmchId: kmch.id,
                     kmchName: kmch.name,
-                    count: count
+                    count
                 });
             }
 
@@ -603,192 +841,19 @@
             alert(`Успешно! Собрано ${count} шт. КМЧ, компоненты списаны со склада.`);
         }
 
+        /* ---------- ОТЧЕТЫ / КОРРЕКЦИЯ ---------- */
         function modifyRecordCount(recordId, delta) {
             const rec = employeeRecords.find(r => r.id === recordId);
             if (!rec) return;
-
             if (currentUser.role !== 'admin' && rec.employeeName !== currentUser.name) {
                 alert('Вы можете изменять только свои результаты!');
                 return;
             }
-
             rec.count += delta;
-            if (rec.count <= 0) {
-                employeeRecords = employeeRecords.filter(r => r.id !== recordId);
-            }
-
+            if (rec.count <= 0) employeeRecords = employeeRecords.filter(r => r.id !== recordId);
             addLog(`Коррекция сборки «${rec.kmchName}» (сотрудник: ${rec.employeeName}), изменение на ${delta > 0 ? '+' + delta : delta}`);
             saveData();
             renderAll();
-        }
-
-        function toggleCloseKmch(kmchId) {
-            if (currentUser.role !== 'admin') return;
-            const kmch = kmchList.find(k => k.id === kmchId);
-            if (!kmch) return;
-            kmch.closed = !kmch.closed;
-            addLog(`Администратор ${kmch.closed ? 'закрыл' : 'открыл'} задачу КМЧ: «${kmch.name}»`);
-            saveData();
-            renderCalculator();
-        }
-
-        function adminAddNewItem() {
-            const name = document.getElementById('adminItemName').value.trim();
-            const qty = parseInt(document.getElementById('adminItemQty').value) || 0;
-            const top = document.getElementById('adminItemTop').checked;
-            if (!name) { alert('Введите название'); return; }
-
-            items.push({ id: Date.now().toString(), name, qty, top });
-            addLog(`Создан расходник: «${name}» (${qty} шт)`);
-            saveData();
-            document.getElementById('adminItemName').value = '';
-            document.getElementById('adminItemQty').value = '0';
-            renderAll();
-            alert('Успешно создано!');
-        }
-
-        function deleteItem(id) {
-            const item = items.find(i => i.id === id);
-            if(!confirm(`Удалить «${item.name}»?`)) return;
-            items = items.filter(i => i.id !== id);
-            addLog(`Удален расходник: «${item.name}»`);
-            saveData();
-            renderAll();
-        }
-
-        function adminAddEmployee() {
-            const name = document.getElementById('newEmpName').value.trim();
-            const pass = document.getElementById('newEmpPass').value.trim();
-            if (!name || !pass) { alert('Заполните имя и пароль сотрудника'); return; }
-
-            employees.push({ id: 'emp_' + Date.now(), name, pass });
-            saveData();
-            document.getElementById('newEmpName').value = '';
-            document.getElementById('newEmpPass').value = '';
-            renderAdminEmployees();
-            alert('Сотрудник добавлен!');
-        }
-
-        function deleteEmployee(id) {
-            employees = employees.filter(e => e.id !== id);
-            saveData();
-            renderAdminEmployees();
-        }
-
-        function renderAdminEmployees() {
-            const container = document.getElementById('employeesListContainer');
-            if(!container) return;
-            if(employees.length === 0) {
-                container.innerHTML = '<span class="text-xs text-slate-400">Нет сотрудников</span>';
-                return;
-            }
-            container.innerHTML = employees.map(e => `
-                <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl text-xs">
-                    <div><span class="font-bold">${e.name}</span> <span class="text-slate-400">(${e.pass})</span></div>
-                    <button onclick="deleteEmployee('${e.id}')" class="text-red-500 hover:text-red-700 font-bold">🗑️</button>
-                </div>
-            `).join('');
-        }
-
-        function createKmchItem() {
-            const name = document.getElementById('newKmchName').value.trim();
-            const target = parseInt(document.getElementById('newKmchTarget').value) || 50;
-            if (!name) { alert('Введите название КМЧ'); return; }
-
-            kmchList.push({ id: 'k_' + Date.now(), name, target, closed: false, requiredIds: [] });
-            document.getElementById('newKmchName').value = '';
-            saveData();
-            renderCalculator();
-        }
-
-        function renderCalculator() {
-            const container = document.getElementById('kmchCalculationsList');
-            if (kmchList.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет планов КМЧ.</p>';
-                return;
-            }
-
-            const visibleList = kmchList.filter(k => currentUser.role === 'admin' || !k.closed);
-
-            if (visibleList.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет активных планов КМЧ.</p>';
-                return;
-            }
-
-            container.innerHTML = visibleList.map(kmch => {
-                let maxAssembly = 0;
-                if (kmch.requiredIds.length > 0) {
-                    const counts = kmch.requiredIds.map(reqId => {
-                        const stockItem = items.find(i => i.id === reqId);
-                        return stockItem ? stockItem.qty : 0;
-                    });
-                    maxAssembly = Math.min(...counts);
-                }
-
-                const totalAssembled = employeeRecords.filter(r => r.kmchId === kmch.id).reduce((sum, r) => sum + r.count, 0);
-                const target = kmch.target || 0;
-                const percent = target > 0 ? Math.min(Math.round((totalAssembled / target) * 100), 100) : 0;
-                const deficit = target - totalAssembled;
-                const remainingDeficit = deficit > 0 ? deficit : 0;
-
-                const assignedNames = kmch.requiredIds.map(id => {
-                    const found = items.find(i => i.id === id);
-                    return found ? `<span class="inline-block bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-md mr-1 mb-1">${found.name}: <b>${found.qty} шт</b></span>` : '';
-                }).join('');
-
-                return `
-                    <div class="bg-slate-50 border ${kmch.closed ? 'border-slate-300 opacity-75' : 'border-slate-200'} rounded-2xl p-4 flex flex-col justify-between space-y-4">
-                        <div>
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-bold text-slate-900 text-base">
-                                        ${kmch.name} 
-                                        ${kmch.closed ? '<span class="ml-2 px-2 py-0.5 bg-slate-200 text-slate-600 text-[10px] font-bold rounded">Закрыта</span>' : ''}
-                                    </h4>
-                                    <p class="text-xs text-slate-500">План от админа: <span class="font-bold text-slate-800">${target} шт</span></p>
-                                </div>
-                                <div class="flex space-x-1">
-                                    ${!kmch.closed ? `
-                                    <button onclick="openAssembleModal('${kmch.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm">
-                                        🛠️ Собрать КМЧ
-                                    </button>` : ''}
-                                    ${currentUser.role === 'admin' ? `
-                                    <button onclick="toggleCloseKmch('${kmch.id}')" class="px-2.5 py-1.5 ${kmch.closed ? 'bg-slate-200 text-slate-700' : 'bg-amber-100 text-amber-800'} text-xs font-semibold rounded-lg">
-                                        ${kmch.closed ? '🔓 Открыть' : '📁 Закрыть'}
-                                    </button>
-                                    <button onclick="openKmchConfig('${kmch.id}')" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-lg">⚙️</button>` : ''}
-                                </div>
-                            </div>
-
-                            <div class="mt-3 space-y-1">
-                                <div class="flex justify-between text-xs font-semibold">
-                                    <span class="text-slate-600">Прогресс выполнения:</span>
-                                    <span class="text-blue-700">${totalAssembled} из ${target} шт (${percent}%)</span>
-                                </div>
-                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                                    <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
-                                </div>
-                            </div>
-
-                            <div class="mt-3 text-xs text-slate-500">
-                                <span class="font-semibold text-slate-700">Необходимые компоненты:</span><br>
-                                <div class="mt-1 flex flex-wrap">${assignedNames || '<span class="text-slate-400 italic">компоненты не привязаны администратором</span>'}</div>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="bg-blue-50 border border-blue-100 rounded-xl p-3">
-                                <span class="text-[10px] font-bold text-blue-800 block uppercase">Можно сделать с учетом расходников на складе:</span>
-                                <span class="text-xl font-black text-blue-700 mt-1 block">${maxAssembly} шт</span>
-                            </div>
-                            <div class="bg-amber-50 border border-amber-100 rounded-xl p-3">
-                                <span class="text-[10px] font-bold text-amber-800 block uppercase">Осталось собрать по плану:</span>
-                                <span class="text-xl font-black text-amber-700 mt-1 block">${remainingDeficit > 0 ? remainingDeficit + ' шт' : 'План выполнен! 🎉'}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
         }
 
         function renderEmployeeRecords() {
@@ -796,7 +861,6 @@
             const titleEl = document.getElementById('reportTitle');
             const subtitleEl = document.getElementById('reportSubtitle');
 
-            // Настраиваем шапку в зависимости от роли
             if (currentUser.role === 'admin') {
                 titleEl.innerText = "Общий отчет: Сборка КМЧ всеми сотрудниками";
                 subtitleEl.innerText = "Административный просмотр всех результатов с возможностью сортировки";
@@ -808,14 +872,12 @@
                 subtitleEl.innerText = "Войдите в систему для просмотра";
             }
 
-            // Фильтрация: сотрудник видит только свои, админ видит всех
             let list = employeeRecords.filter(r => {
                 if (currentUser.role === 'admin') return true;
                 if (currentUser.role === 'employee') return r.employeeName === currentUser.name;
                 return false;
             });
 
-            // Сортировка для админа
             if (currentUser.role === 'admin') {
                 const sortVal = document.getElementById('reportSortSelect').value;
                 list.sort((a, b) => {
@@ -841,8 +903,8 @@
                         <td class="p-3 sm:p-4 text-center font-black text-blue-600 text-base">${rec.count} шт</td>
                         <td class="p-3 sm:p-4 text-right space-x-1">
                             ${canModify ? `
-                            <button onclick="modifyRecordCount('${rec.id}', 1)" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-lg shadow-sm" title="Добавить 1 шт">➕</button>
-                            <button onclick="modifyRecordCount('${rec.id}', -1)" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs rounded-lg shadow-sm" title="Убавить 1 шт">➖</button>
+                                <button onclick="modifyRecordCount('${rec.id}', 1)" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-lg shadow-sm" title="Добавить 1 шт">➕</button>
+                                <button onclick="modifyRecordCount('${rec.id}', -1)" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs rounded-lg shadow-sm" title="Убавить 1 шт">➖</button>
                             ` : '<span class="text-[11px] text-slate-400 italic">Только своё</span>'}
                         </td>
                     </tr>
@@ -850,63 +912,72 @@
             }).join('');
         }
 
-        function openKmchConfig(kmchId) {
-            currentEditingKmchId = kmchId;
+        /* ---------- ПЛАН КМЧ ---------- */
+        function toggleCloseKmch(kmchId) {
+            if (currentUser.role !== 'admin') return;
             const kmch = kmchList.find(k => k.id === kmchId);
-            document.getElementById('kmchConfigTitle').innerText = `Изделие: ${kmch.name}`;
-
-            const listDiv = document.getElementById('kmchComponentsCheckboxList');
-            listDiv.innerHTML = items.map(item => `
-                <label class="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
-                    <input type="checkbox" value="${item.id}" ${kmch.requiredIds.includes(item.id) ? 'checked' : ''} class="kmch-check w-4 h-4 text-blue-600 rounded border-slate-300">
-                    <span class="text-sm font-medium text-slate-800">${item.name} <span class="text-xs text-slate-400">(на складе: ${item.qty})</span></span>
-                </label>
-            `).join('');
-
-            document.getElementById('kmchConfigModal').classList.remove('hidden');
-        }
-
-        function closeKmchConfigModal() {
-            document.getElementById('kmchConfigModal').classList.add('hidden');
-        }
-
-        function saveKmchConfig() {
-            const kmch = kmchList.find(k => k.id === currentEditingKmchId);
             if (!kmch) return;
-            const checkboxes = document.querySelectorAll('.kmch-check');
-            const selectedIds = [];
-            checkboxes.forEach(cb => { if (cb.checked) selectedIds.push(cb.value); });
-
-            kmch.requiredIds = selectedIds;
+            kmch.closed = !kmch.closed;
+            addLog(`Администратор ${kmch.closed ? 'закрыл' : 'открыл'} задачу КМЧ: «${kmch.name}»`);
             saveData();
-            closeKmchConfigModal();
             renderCalculator();
         }
 
-        function renderLogs() {
-            const tbody = document.getElementById('logsTableBody');
-            if (logs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400">История пуста</td></tr>`;
+        function createKmchItem() {
+            const name = document.getElementById('newKmchName').value.trim();
+            const target = parseInt(document.getElementById('newKmchTarget').value) || 50;
+            if (!name) { alert('Введите название КМЧ'); return; }
+            kmchList.push({ id: 'k_' + Date.now(), name, target, closed: false, requiredIds: [] });
+            document.getElementById('newKmchName').value = '';
+            addLog(`Создан план КМЧ: «${name}» (цель: ${target} шт)`);
+            saveData();
+            renderCalculator();
+            renderWarehouse();
+        }
+
+        function renderCalculator() {
+            const container = document.getElementById('kmchCalculationsList');
+            if (kmchList.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет планов КМЧ.</p>';
                 return;
             }
-            tbody.innerHTML = logs.map(log => `
-                <tr class="hover:bg-slate-50/85 transition">
-                    <td class="p-3 sm:p-4 text-xs text-slate-500 whitespace-nowrap">${log.time}</td>
-                    <td class="p-3 sm:p-4 font-bold text-xs text-blue-700">${log.user}</td>
-                    <td class="p-3 sm:p-4 text-slate-800">${log.text}</td>
-                </tr>
-            `).join('');
-        }
+            const visibleList = kmchList.filter(k => currentUser.role === 'admin' || !k.closed);
+            if (visibleList.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет активных планов КМЧ.</p>';
+                return;
+            }
 
-        function clearLogs() {
-            if (!confirm('Очистить историю?')) return;
-            logs = [];
-            saveData();
-            renderLogs();
-        }
+            container.innerHTML = visibleList.map(kmch => {
+                let maxAssembly = 0;
+                if (kmch.requiredIds.length > 0) {
+                    const counts = kmch.requiredIds.map(reqId => {
+                        const stockItem = items.find(i => i.id === reqId);
+                        return stockItem ? stockItem.qty : 0;
+                    });
+                    maxAssembly = Math.min(...counts);
+                }
+                const totalAssembled = employeeRecords.filter(r => r.kmchId === kmch.id).reduce((sum, r) => sum + r.count, 0);
+                const target = kmch.target || 0;
+                const percent = target > 0 ? Math.min(Math.round((totalAssembled / target) * 100), 100) : 0;
+                const remainingDeficit = Math.max(target - totalAssembled, 0);
 
-        updateUIRoles();
-        renderAll();
-    </script>
-</body>
-</html>
+                const assignedNames = kmch.requiredIds.map(id => {
+                    const found = items.find(i => i.id === id);
+                    if (!found) return '';
+                    const isLow = found.qty <= (found.minQty || 0);
+                    return `<span class="inline-block ${isLow ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-700'} text-xs px-2 py-0.5 rounded-md mr-1 mb-1">${found.name}: <b>${found.qty} шт</b>${isLow ? ' ⚠️' : ''}</span>`;
+                }).join('');
+
+                return `
+                    <div class="bg-slate-50 border ${kmch.closed ? 'border-slate-300 opacity-75' : 'border-slate-200'} rounded-2xl p-4 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex justify-between items-start gap-2">
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-base">
+                                        ${kmch.name}
+                                        ${kmch.closed ? '<span class="ml-2 px-2 py-0.5 bg-slate-200 text-slate-600 text-[10px] font-bold rounded">Закрыта</span>' : ''}
+                                    </h4>
+                                    <p class="text-xs text-slate-500">План от админа: <span class="font-bold text-slate-800">${target} шт</span></p>
+                                </div>
+                                <div class="flex space-x-1 shrink-0">
+                                    ${!kmch.closed ? `<button onclick="openAssembleModal('${kmch.id
