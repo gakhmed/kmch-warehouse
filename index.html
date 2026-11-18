@@ -11,12 +11,17 @@
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
 
+    <!-- Индикатор загрузки/синхронизации с сервером -->
+    <div id="syncIndicator" class="bg-amber-500 text-white text-center text-xs py-1 font-medium">
+        ⟳ Синхронизация с сервером PocketBase...
+    </div>
+
     <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
                 <div class="bg-blue-600 p-2 rounded-xl text-xl font-bold">📦</div>
                 <div>
-                    <h1 class="text-lg font-bold leading-tight">Склад КМЧ</h1>
+                    <h1 class="text-lg font-bold leading-tight">Склад КМЧ (Сервер)</h1>
                     <p class="text-xs text-slate-400" id="currentRoleSubtitle">Гость (требуется вход)</p>
                 </div>
             </div>
@@ -174,7 +179,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Мин. остаток (порог)</label>
-                            <input type="number" id="adminItemMinQty" value="10" min="0" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none" title="Порог, ниже которого позиция считается «заканчивающейся»">
+                            <input type="number" id="adminItemMinQty" value="10" min="0" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
                         </div>
                     </div>
                     <div>
@@ -309,46 +314,16 @@
     </div>
 
     <script>
+        const PB_URL = 'http://188.130.139.224:8090';
+        let recordId = null; // ID записи в PocketBase
+
         let currentUser = { name: 'Гость', role: 'guest' };
 
-        let items = JSON.parse(localStorage.getItem('kmch_items')) || [
-            { id: '1', name: 'Резьба приварная 32Ду', qty: 50, top: true },
-            { id: '2', name: 'Труба изогнутая под СГМН 25ДУ', qty: 50, top: true },
-            { id: '3', name: 'Штуцер 32 Ду', qty: 50, top: true },
-            { id: '4', name: 'Прокладка паронитовая 32', qty: 120, top: false },
-            { id: '5', name: 'Гайка накидная G 1 1/4', qty: 85, top: false }
-        ];
-        // Миграция старых записей: позиции с названием «КМЧ ...» считаем готовой продукцией.
-        items = items.map(i => {
-            const isKmchStock = Boolean(i.isKmchStock || /^кмч\b/i.test(String(i.name || '').trim()) || /готовые?\s+кмч/i.test(String(i.category || '')));
-            return {
-                ...i,
-                category: i.category || (isKmchStock ? 'Готовые КМЧ' : 'Общее'),
-                minQty: (i.minQty === undefined || i.minQty === null) ? 10 : i.minQty,
-                isKmchStock,
-                top: isKmchStock ? true : Boolean(i.top)
-            };
-        });
-
-        let employees = JSON.parse(localStorage.getItem('kmch_employees')) || [
-            { id: 'e1', name: 'Иван', pass: '111' },
-            { id: 'e2', name: 'Петр', pass: '222' }
-        ];
-
-        let kmchList = JSON.parse(localStorage.getItem('kmch_products')) || [
-            { id: 'k1', name: 'КМЧ СГМН G6', target: 50, closed: false, requiredIds: ['1', '2', '3'] }
-        ];
-
-        kmchList = kmchList.map(k => ({
-            ...k,
-            requiredIds: Array.isArray(k.requiredIds) ? k.requiredIds : [],
-            outputItemId: k.outputItemId || null
-        }));
-
-        let employeeRecords = JSON.parse(localStorage.getItem('kmch_emp_records')) || [];
-        let logs = JSON.parse(localStorage.getItem('kmch_logs')) || [
-            { time: '16.11.2026 10:00', user: 'Система', text: 'Инициализация системы' }
-        ];
+        let items = [];
+        let employees = [];
+        let kmchList = [];
+        let employeeRecords = [];
+        let logs = [];
 
         let currentModalAction = null;
         let currentEditingKmchId = null;
@@ -356,18 +331,133 @@
         let activeTab = 'warehouse';
         let activeWarehouseView = 'general';
 
+        // Асинхронная загрузка данных с PocketBase
+        async function loadState() {
+            try {
+                const res = await fetch(`${PB_URL}/api/collections/app_state/records`);
+                const data = await res.json();
+                if (data.items && data.items.length > 0) {
+                    const stateRec = data.items[0];
+                    recordId = stateRec.id;
+                    const jsonState = stateRec.data || {};
+                    
+                    items = jsonState.items || getDefaultItems();
+                    employees = jsonState.employees || getDefaultEmployees();
+                    kmchList = jsonState.kmchList || getDefaultKmch();
+                    employeeRecords = jsonState.employeeRecords || [];
+                    logs = jsonState.logs || getDefaultLogs();
+                } else {
+                    // Если таблица пуста, создаем начальную запись
+                    items = getDefaultItems();
+                    employees = getDefaultEmployees();
+                    kmchList = getDefaultKmch();
+                    employeeRecords = [];
+                    logs = getDefaultLogs();
+                    await createInitialStateOnServer();
+                }
+                document.getElementById('syncIndicator').classList.add('hidden');
+                updateUIRoles();
+                renderAll();
+            } catch (e) {
+                console.error("Ошибка соединения с PocketBase:", e);
+                document.getElementById('syncIndicator').innerText = "⚠️ Ошибка связи с сервером! Проверьте подключение.";
+                document.getElementById('syncIndicator').className = "bg-red-600 text-white text-center text-xs py-1 font-medium";
+                // Фоллбэк на localStorage если сеть упала
+                loadFromLocalFallback();
+            }
+        }
+
+        async function createInitialStateOnServer() {
+            try {
+                const res = await fetch(`${PB_URL}/api/collections/app_state/records`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        data: { items, employees, kmchList, employeeRecords, logs }
+                    })
+                });
+                const rec = await res.json();
+                recordId = rec.id;
+            } catch(err) {
+                console.error("Не удалось создать начальное состояние на сервере", err);
+            }
+        }
+
+        // Автосохранение на сервер PocketBase
+        async function saveData() {
+            const payload = {
+                data: { items, employees, kmchList, employeeRecords, logs }
+            };
+
+            document.getElementById('syncIndicator').innerText = "⟳ Сохранение на сервер...";
+            document.getElementById('syncIndicator').className = "bg-amber-500 text-white text-center text-xs py-1 font-medium";
+            document.getElementById('syncIndicator').classList.remove('hidden');
+
+            try {
+                let url = `${PB_URL}/api/collections/app_state/records`;
+                let method = 'POST';
+                if (recordId) {
+                    url = `${PB_URL}/api/collections/app_state/records/${recordId}`;
+                    method = 'PATCH';
+                }
+
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const resData = await res.json();
+                if (res.ok) {
+                    if (!recordId) recordId = resData.id;
+                    document.getElementById('syncIndicator').classList.add('hidden');
+                } else {
+                    throw new Error(JSON.stringify(resData));
+                }
+            } catch (e) {
+                console.error("Ошибка сохранения в PocketBase:", e);
+                document.getElementById('syncIndicator').innerText = "⚠️ Ошибка синхронизации с сервером!";
+                document.getElementById('syncIndicator').className = "bg-red-600 text-white text-center text-xs py-1 font-medium";
+            }
+        }
+
+        function loadFromLocalFallback() {
+            items = JSON.parse(localStorage.getItem('kmch_items')) || getDefaultItems();
+            employees = JSON.parse(localStorage.getItem('kmch_employees')) || getDefaultEmployees();
+            kmchList = JSON.parse(localStorage.getItem('kmch_products')) || getDefaultKmch();
+            employeeRecords = JSON.parse(localStorage.getItem('kmch_emp_records')) || [];
+            logs = JSON.parse(localStorage.getItem('kmch_logs')) || getDefaultLogs();
+            updateUIRoles();
+            renderAll();
+        }
+
+        function getDefaultItems() {
+            return [
+                { id: '1', name: 'Резьба приварная 32Ду', qty: 50, minQty: 10, category: 'Общее', isKmchStock: false, top: false },
+                { id: '2', name: 'Труба изогнутая под СГМН 25ДУ', qty: 50, minQty: 10, category: 'Общее', isKmchStock: false, top: false },
+                { id: '3', name: 'Штуцер 32 Ду', qty: 50, minQty: 10, category: 'Общее', isKmchStock: false, top: false },
+                { id: '4', name: 'Прокладка паронитовая 32', qty: 120, minQty: 20, category: 'Общее', isKmchStock: false, top: false },
+                { id: '5', name: 'Гайка накидная G 1 1/4', qty: 85, minQty: 15, category: 'Общее', isKmchStock: false, top: false }
+            ];
+        }
+        function getDefaultEmployees() {
+            return [
+                { id: 'e1', name: 'Иван', pass: '111' },
+                { id: 'e2', name: 'Петр', pass: '222' }
+            ];
+        }
+        function getDefaultKmch() {
+            return [
+                { id: 'k1', name: 'КМЧ СГМН G6', target: 50, closed: false, requiredIds: ['1', '2', '3'], outputItemId: null }
+            ];
+        }
+        function getDefaultLogs() {
+            return [{ time: '16.11.2026 10:00', user: 'Система', text: 'Инициализация системы через PocketBase' }];
+        }
+
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, ch => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             })[ch]);
-        }
-
-        function saveData() {
-            localStorage.setItem('kmch_items', JSON.stringify(items));
-            localStorage.setItem('kmch_employees', JSON.stringify(employees));
-            localStorage.setItem('kmch_products', JSON.stringify(kmchList));
-            localStorage.setItem('kmch_emp_records', JSON.stringify(employeeRecords));
-            localStorage.setItem('kmch_logs', JSON.stringify(logs));
         }
 
         function addLog(text) {
@@ -620,13 +710,13 @@
                 <tr class="hover:bg-slate-50/85 transition ${isLow ? 'bg-red-50/40' : ''}">
                     <td class="p-3 sm:p-4">
                         <div class="font-medium text-slate-900 flex items-center flex-wrap gap-1.5">
-                            ${item.name}
+                            ${escapeHtml(item.name)}
                             ${item.isKmchStock ? '<span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded">Готовое КМЧ</span>' : ''}
                             ${isLow ? '<span class="px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded">⚠️ Заканчивается</span>' : ''}
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                            <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded">📁 ${item.category || 'Общее'}</span>
-                            ${usedIn.length > 0 ? `<span class="text-[10px] text-slate-400">используется в: ${usedInText}</span>` : ''}
+                            <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded">📁 ${escapeHtml(item.category || 'Общее')}</span>
+                            ${usedIn.length > 0 ? `<span class="text-[10px] text-slate-400">используется в: ${escapeHtml(usedInText)}</span>` : ''}
                         </div>
                     </td>
                     <td class="p-3 sm:p-4 text-center">
@@ -652,7 +742,7 @@
                 return;
             }
             sel.innerHTML = active.map(k =>
-                `<option value="${k.id}">${k.name}${k.closed ? ' (закрыта)' : ''}</option>`
+                `<option value="${k.id}">${escapeHtml(k.name)}${k.closed ? ' (закрыта)' : ''}</option>`
             ).join('');
             if (currentVal && active.find(k => k.id === currentVal)) sel.value = currentVal;
         }
@@ -667,7 +757,6 @@
                 container.innerHTML = `<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center text-slate-400">
                     <div class="text-3xl mb-2">🔧</div>
                     <p class="text-sm">Нет активных изделий КМЧ</p>
-                    <p class="text-xs mt-1">Администратор должен создать план КМЧ</p>
                 </div>`;
                 return;
             }
@@ -680,7 +769,6 @@
                 container.innerHTML = `<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center text-slate-400">
                     <div class="text-3xl mb-2">⚙️</div>
                     <p class="text-sm">Компоненты не привязаны</p>
-                    <p class="text-xs mt-1">Администратор должен настроить состав изделия «${kmch.name}»</p>
                 </div>`;
                 return;
             }
@@ -696,40 +784,29 @@
                 return `
                     <tr class="hover:bg-slate-50/85 transition ${isLow ? 'bg-red-50/30' : ''}">
                         <td class="p-3 sm:p-4">
-                            <div class="font-medium text-slate-900">${c.name}</div>
-                            ${c.category ? `<span class="text-[10px] text-slate-400">📁 ${c.category}</span>` : ''}
+                            <div class="font-medium text-slate-900">${escapeHtml(c.name)}</div>
+                            ${c.category ? `<span class="text-[10px] text-slate-400">📁 ${escapeHtml(c.category)}</span>` : ''}
                         </td>
                         <td class="p-3 sm:p-4 text-center">
                             <div class="font-bold text-base ${isLow ? 'text-red-600' : 'text-slate-700'}">${c.qty} шт</div>
-                            ${isLow ? `<div class="text-[10px] text-red-500 font-semibold">⚠️ мало (мин: ${c.minQty || 0})</div>` : ''}
+                            ${isLow ? `<div class="text-[10px] text-red-500 font-semibold">⚠️ мало</div>` : ''}
                         </td>
                         <td class="p-3 sm:p-4 text-center text-xs">
-                            ${remaining === 0
-                                ? '<span class="text-slate-400">План выполнен 🎉</span>'
-                                : (enough
-                                    ? '<span class="text-emerald-600 font-semibold">✅ Достаточно</span>'
-                                    : `<span class="text-red-600 font-semibold">❌ Не хватает ${shortBy} шт</span>`)}
+                            ${remaining === 0 ? '<span class="text-slate-400">План выполнен 🎉</span>' : (enough ? '<span class="text-emerald-600 font-semibold">✅ Достаточно</span>' : `<span class="text-red-600 font-semibold">❌ Не хватает ${shortBy} шт</span>`)}
                         </td>
                         <td class="p-3 sm:p-4 text-right space-x-1 whitespace-nowrap">
-                            <button onclick="openActionModal('add', '${c.id}')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg" title="Пополнить">➕</button>
-                            <button onclick="openActionModal('sub', '${c.id}')" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold rounded-lg" title="Списать">➖</button>
+                            <button onclick="openActionModal('add', '${c.id}')" class="px-2.5 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg">➕</button>
+                            <button onclick="openActionModal('sub', '${c.id}')" class="px-2.5 py-1.5 bg-amber-50 text-amber-700 text-xs font-semibold rounded-lg">➖</button>
                         </td>
                     </tr>
                 `;
             }).join('');
 
-            const planStatus = remaining === 0
-                ? '<span class="text-emerald-300">✅ Выполнен</span>'
-                : (maxBuild >= remaining
-                    ? '<span class="text-emerald-300">✅ Хватает</span>'
-                    : '<span class="text-amber-300">⚠️ Нужно пополнить</span>');
-
             container.innerHTML = `
                 <div class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-2xl p-5 text-white shadow-lg">
                     <div class="flex items-start justify-between gap-3 mb-3">
-                        <h3 class="text-xs uppercase tracking-wider text-blue-200 font-semibold">${kmch.name}${kmch.closed ? ' (закрыта)' : ''}</h3>
+                        <h3 class="text-xs uppercase tracking-wider text-blue-200 font-semibold">${escapeHtml(kmch.name)}${kmch.closed ? ' (закрыта)' : ''}</h3>
                         ${!kmch.closed && outputItem ? `<button onclick="openAssembleModal('${kmch.id}')" class="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg shadow-sm">🛠️ Собрать</button>` : ''}
-                        ${!kmch.closed && !outputItem ? '<span class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-lg">⚠️ Привяжите готовое КМЧ</span>' : ''}
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
                         <div class="bg-white/10 backdrop-blur rounded-xl p-3 border border-white/10">
@@ -750,28 +827,13 @@
                         </div>
                         <div class="bg-white/10 backdrop-blur rounded-xl p-3 border border-white/10">
                             <div class="text-[10px] uppercase text-blue-200 font-semibold">Статус плана</div>
-                            <div class="text-sm font-black mt-1">${planStatus}</div>
+                            <div class="text-sm font-black mt-1">${remaining === 0 ? '✅ Выполнен' : 'В работе'}</div>
                         </div>
                     </div>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-4">
-                    <div class="p-4 sm:p-5 border-b border-slate-100">
-                        <h4 class="font-bold text-slate-900">Компоненты для сборки</h4>
-                        <p class="text-xs text-slate-500">Только расходники, привязанные к этому изделию</p>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-100">
-                                    <th class="p-3 sm:p-4 font-semibold">Компонент</th>
-                                    <th class="p-3 sm:p-4 font-semibold text-center">На складе</th>
-                                    <th class="p-3 sm:p-4 font-semibold text-center">Статус по плану</th>
-                                    <th class="p-3 sm:p-4 font-semibold text-right">Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 text-sm">${rows}</tbody>
-                        </table>
-                    </div>
+                    <div class="p-4 sm:p-5 border-b border-slate-100"><h4 class="font-bold text-slate-900">Компоненты для сборки</h4></div>
+                    <div class="overflow-x-auto"><table class="w-full text-left border-collapse"><tbody class="divide-y divide-slate-100 text-sm">${rows}</tbody></table></div>
                 </div>
             `;
         }
@@ -811,14 +873,6 @@
             if (currentUser.role === 'guest') { alert('Пожалуйста, войдите в систему!'); openLoginModal(); return; }
             const kmch = kmchList.find(k => k.id === kmchId);
             if (!kmch) return;
-            if (!kmch.outputItemId || !items.some(i => i.id === kmch.outputItemId && i.isKmchStock)) {
-                alert('Для этого плана не выбрана складская позиция готового КМЧ. Администратор должен открыть ⚙️ и привязать готовое изделие.');
-                return;
-            }
-            if (kmch.requiredIds.length === 0) {
-                alert('Для этого изделия не привязаны комплектующие. Администратор должен настроить состав КМЧ.');
-                return;
-            }
             currentAssembleKmchId = kmchId;
             document.getElementById('assembleKmchName').innerText = `Изделие: ${kmch.name}`;
             document.getElementById('assembleKmchQty').value = 1;
@@ -828,78 +882,50 @@
 
         function submitAssembleKmch() {
             const count = Number.parseInt(document.getElementById('assembleKmchQty').value, 10);
-            if (!Number.isSafeInteger(count) || count <= 0) { alert('Введите корректное целое количество больше нуля.'); return; }
+            if (!Number.isSafeInteger(count) || count <= 0) { alert('Введите корректное количество.'); return; }
 
             const kmch = kmchList.find(k => k.id === currentAssembleKmchId);
             if (!kmch) return;
 
             const outputItem = items.find(i => i.id === kmch.outputItemId && i.isKmchStock);
             if (!outputItem) {
-                alert('Не найдена складская позиция готового КМЧ. Проверьте привязку в настройках плана.');
+                alert('Не найдена складская позиция готового КМЧ. Привяжите её в настройках плана (⚙️).');
                 return;
             }
 
             const componentIds = [...new Set(kmch.requiredIds)];
             const componentItems = componentIds.map(id => items.find(i => i.id === id));
-            const shortages = [];
-            componentIds.forEach((id, index) => {
-                const stockItem = componentItems[index];
-                if (!stockItem || stockItem.isKmchStock || stockItem.qty < count) {
-                    shortages.push({
-                        name: stockItem ? stockItem.name : 'Удалённый компонент',
-                        need: count,
-                        have: stockItem ? stockItem.qty : 0
-                    });
+            for (let i = 0; i < componentItems.length; i++) {
+                if (!componentItems[i] || componentItems[i].qty < count) {
+                    alert(`Недостаточно компонента: ${componentItems[i] ? componentItems[i].name : 'Удален'}`);
+                    return;
                 }
-            });
-
-            if (shortages.length > 0) {
-                alert('❌ Недостаточно комплектующих или в составе есть недействительная позиция:\n\n' +
-                    shortages.map(s => `• ${s.name}: нужно ${s.need} шт., есть ${s.have} шт.`).join('\n'));
-                return;
             }
 
-            // Проверки пройдены. Изменяем остатки одним блоком: расходники минус, готовая продукция плюс.
             componentItems.forEach(item => { item.qty -= count; });
             outputItem.qty += count;
 
-            // Группируем результаты только при совпадении состава и складской позиции.
-            // Это сохраняет корректность последующих исправлений, даже если состав КМЧ изменится.
-            const componentsKey = [...componentIds].sort().join('|');
-            const existingRecord = employeeRecords.find(r =>
-                r.employeeName === currentUser.name &&
-                r.kmchId === kmch.id &&
-                r.stockTracked === true &&
-                r.outputItemId === outputItem.id &&
-                [...(r.componentIds || [])].sort().join('|') === componentsKey
-            );
-
+            const existingRecord = employeeRecords.find(r => r.employeeName === currentUser.name && r.kmchId === kmch.id && r.outputItemId === outputItem.id);
             if (existingRecord) {
                 existingRecord.count += count;
             } else {
                 employeeRecords.push({
-                    id: 'rec_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                    id: 'rec_' + Date.now(),
                     employeeName: currentUser.name,
                     kmchId: kmch.id,
                     kmchName: kmch.name,
                     count,
                     stockTracked: true,
                     outputItemId: outputItem.id,
-                    componentIds: [...componentIds],
-                    createdAt: new Date().toISOString()
+                    componentIds: [...componentIds]
                 });
             }
 
-            const partsText = componentItems.map(item => `${item.name} (-${count} шт.)`).join(', ');
-            addLog(`Сотрудник ${currentUser.name} собрал «${kmch.name}» (${count} шт.). Готовая продукция «${outputItem.name}»: +${count} шт. Комплектующие списаны: ${partsText}`);
+            addLog(`Сотрудник ${currentUser.name} собрал «${kmch.name}» (${count} шт.). Готовая продукция: +${count} шт.`);
             saveData();
             closeAssembleModal();
             renderAll();
-            alert(`Готово!
-
-Собрано: ${count} шт.
-На склад «${outputItem.name}» добавлено: +${count} шт.
-Комплектующие автоматически списаны.`);
+            alert(`Успешно собрано ${count} шт.`);
         }
 
         function modifyRecordCount(recordId, delta) {
@@ -909,103 +935,29 @@
                 alert('Вы можете изменять только свои результаты!');
                 return;
             }
-            if (!Number.isSafeInteger(delta) || delta === 0) return;
-
             const change = Math.abs(delta);
-            let warehouseMessage = 'Склад не изменялся (историческая запись до включения учёта готовой продукции).';
-
             if (rec.stockTracked === true) {
                 const outputItem = items.find(i => i.id === rec.outputItemId && i.isKmchStock);
                 const componentItems = (rec.componentIds || []).map(id => items.find(i => i.id === id));
-                if (!outputItem || componentItems.some(item => !item || item.isKmchStock)) {
-                    alert('Нельзя скорректировать запись: складская позиция или один из компонентов удалён/изменён. Сначала восстановите складскую позицию и состав.');
+                if (!outputItem || componentItems.some(i => !i)) {
+                    alert('Ошибка: компоненты или складская позиция были удалены.');
                     return;
                 }
-
                 if (delta > 0) {
-                    const shortages = componentItems.filter(item => item.qty < change);
-                    if (shortages.length) {
-                        alert('Недостаточно комплектующих для увеличения результата:\n' + shortages.map(i => `${i.name}: есть ${i.qty}, нужно ${change}`).join('\n'));
-                        return;
-                    }
-                    componentItems.forEach(item => { item.qty -= change; });
+                    if (componentItems.some(i => i.qty < change)) { alert('Недостаточно комплектующих!'); return; }
+                    componentItems.forEach(i => { i.qty -= change; });
                     outputItem.qty += change;
-                    warehouseMessage = `На склад «${outputItem.name}» добавлено +${change} шт.; комплектующие списаны.`;
                 } else {
-                    if (outputItem.qty < change) {
-                        alert(`Нельзя уменьшить результат на ${change} шт.: на складе «${outputItem.name}» осталось только ${outputItem.qty} шт. Сначала верните готовую продукцию на склад или исправьте фактический остаток.`);
-                        return;
-                    }
+                    if (outputItem.qty < change) { alert('Нельзя уменьшить: на складе нет столько готовой продукции.'); return; }
                     outputItem.qty -= change;
-                    componentItems.forEach(item => { item.qty += change; });
-                    warehouseMessage = `Со склада «${outputItem.name}» списано ${change} шт.; комплектующие возвращены.`;
+                    componentItems.forEach(i => { i.qty += change; });
                 }
             }
-
             rec.count += delta;
             if (rec.count <= 0) employeeRecords = employeeRecords.filter(r => r.id !== recordId);
-            addLog(`Коррекция сборки «${rec.kmchName}» (сотрудник: ${rec.employeeName}), изменение ${delta > 0 ? '+' + delta : delta}. ${warehouseMessage}`);
+            addLog(`Коррекция сборки «${rec.kmchName}» (${rec.employeeName}), изменение ${delta > 0 ? '+' + delta : delta}.`);
             saveData();
             renderAll();
-        }
-
-        function renderEmployeeRecords() {
-            const tbody = document.getElementById('employeeRecordsTableBody');
-            const titleEl = document.getElementById('reportTitle');
-            const subtitleEl = document.getElementById('reportSubtitle');
-
-            if (currentUser.role === 'admin') {
-                titleEl.innerText = "Общий отчет: Сборка КМЧ всеми сотрудниками";
-                subtitleEl.innerText = "Административный просмотр всех результатов с возможностью сортировки";
-            } else if (currentUser.role === 'employee') {
-                titleEl.innerText = "Мои результаты сборки КМЧ";
-                subtitleEl.innerText = "Список ваших собранных изделий и возможность быстрой корректировки";
-            } else {
-                titleEl.innerText = "Результаты сборки КМЧ";
-                subtitleEl.innerText = "Войдите в систему для просмотра";
-            }
-
-            let list = employeeRecords.filter(r => {
-                if (currentUser.role === 'admin') return true;
-                if (currentUser.role === 'employee') return r.employeeName === currentUser.name;
-                return false;
-            });
-
-            if (currentUser.role === 'admin') {
-                const sortVal = document.getElementById('reportSortSelect').value;
-                list.sort((a, b) => {
-                    if (sortVal === 'name_asc') return a.employeeName.localeCompare(b.employeeName);
-                    if (sortVal === 'name_desc') return b.employeeName.localeCompare(a.employeeName);
-                    if (sortVal === 'kmch_asc') return a.kmchName.localeCompare(b.kmchName);
-                    if (sortVal === 'count_desc') return b.count - a.count;
-                    return 0;
-                });
-            }
-
-            if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">Нет записей о сборке</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = list.map(rec => {
-                const canModify = (currentUser.role === 'admin' || currentUser.name === rec.employeeName);
-                return `
-                    <tr class="hover:bg-slate-50/85 transition">
-                        <td class="p-3 sm:p-4 font-bold text-slate-900">${rec.employeeName}</td>
-                        <td class="p-3 sm:p-4 text-slate-700">
-                            <div>${escapeHtml(rec.kmchName)}</div>
-                            <div class="text-[10px] mt-1 ${rec.stockTracked ? 'text-emerald-600' : 'text-slate-400'}">${rec.stockTracked ? '✓ Склад синхронизирован' : 'Историческая запись · без складской привязки'}</div>
-                        </td>
-                        <td class="p-3 sm:p-4 text-center font-black text-blue-600 text-base">${rec.count} шт</td>
-                        <td class="p-3 sm:p-4 text-right space-x-1">
-                            ${canModify ? `
-                                <button onclick="modifyRecordCount('${rec.id}', 1)" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-lg shadow-sm" title="Добавить 1 шт">➕</button>
-                                <button onclick="modifyRecordCount('${rec.id}', -1)" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs rounded-lg shadow-sm" title="Убавить 1 шт">➖</button>
-                            ` : '<span class="text-[11px] text-slate-400 italic">Только своё</span>'}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
         }
 
         function toggleCloseKmch(kmchId) {
@@ -1023,8 +975,7 @@
             const name = document.getElementById('newKmchName').value.trim();
             const target = parseInt(document.getElementById('newKmchTarget').value) || 50;
             if (!name) { alert('Введите название КМЧ'); return; }
-            const normalizedName = value => String(value || '').trim().toLocaleLowerCase('ru').replace(/\s+/g, ' ');
-            const matchingOutput = items.find(i => i.isKmchStock && normalizedName(i.name) === normalizedName(name));
+            const matchingOutput = items.find(i => i.isKmchStock && i.name.trim().toLowerCase() === name.toLowerCase());
             kmchList.push({ id: 'k_' + Date.now(), name, target, closed: false, requiredIds: [], outputItemId: matchingOutput ? matchingOutput.id : null });
             document.getElementById('newKmchName').value = '';
             addLog(`Создан план КМЧ: «${name}» (цель: ${target} шт)`);
@@ -1035,24 +986,17 @@
 
         function renderCalculator() {
             const container = document.getElementById('kmchCalculationsList');
-            if (kmchList.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет планов КМЧ.</p>';
-                return;
-            }
+            if (kmchList.length === 0) { container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет планов КМЧ.</p>'; return; }
             const visibleList = kmchList.filter(k => currentUser.role === 'admin' || !k.closed);
-            if (visibleList.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет активных планов КМЧ.</p>';
-                return;
-            }
+            if (visibleList.length === 0) { container.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Нет активных планов КМЧ.</p>'; return; }
 
             container.innerHTML = visibleList.map(kmch => {
                 let maxAssembly = 0;
                 if (kmch.requiredIds.length > 0) {
-                    const counts = kmch.requiredIds.map(reqId => {
+                    maxAssembly = Math.min(...kmch.requiredIds.map(reqId => {
                         const stockItem = items.find(i => i.id === reqId);
                         return stockItem ? stockItem.qty : 0;
-                    });
-                    maxAssembly = Math.min(...counts);
+                    }));
                 }
                 const totalAssembled = employeeRecords.filter(r => r.kmchId === kmch.id).reduce((sum, r) => sum + r.count, 0);
                 const target = kmch.target || 0;
@@ -1062,9 +1006,7 @@
 
                 const assignedNames = kmch.requiredIds.map(id => {
                     const found = items.find(i => i.id === id);
-                    if (!found) return '';
-                    const isLow = found.qty <= (found.minQty || 0);
-                    return `<span class="inline-block ${isLow ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-700'} text-xs px-2 py-0.5 rounded-md mr-1 mb-1">${found.name}: <b>${found.qty} шт</b>${isLow ? ' ⚠️' : ''}</span>`;
+                    return found ? `<span class="inline-block bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-md mr-1 mb-1">${escapeHtml(found.name)}: <b>${found.qty} шт</b></span>` : '';
                 }).join('');
 
                 return `
@@ -1072,24 +1014,17 @@
                         <div>
                             <div class="flex justify-between items-start gap-2">
                                 <div>
-                                    <h4 class="font-bold text-slate-900 text-base">
-                                        ${kmch.name}
-                                        ${kmch.closed ? '<span class="ml-2 px-2 py-0.5 bg-slate-200 text-slate-600 text-[10px] font-bold rounded">Закрыта</span>' : ''}
-                                    </h4>
+                                    <h4 class="font-bold text-slate-900 text-base">${escapeHtml(kmch.name)} ${kmch.closed ? '<span class="ml-2 px-2 py-0.5 bg-slate-200 text-slate-600 text-[10px] font-bold rounded">Закрыта</span>' : ''}</h4>
                                     <p class="text-xs text-slate-500">План от админа: <span class="font-bold text-slate-800">${target} шт</span></p>
                                 </div>
                                 <div class="flex space-x-1 shrink-0">
                                     ${!kmch.closed && outputItem ? `<button onclick="openAssembleModal('${kmch.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm">🛠️ Собрать</button>` : ''}
-                                    ${!kmch.closed && !outputItem && currentUser.role === 'admin' ? `<span class="px-2 py-1.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-lg">⚠️ Привяжите склад</span>` : ''}
                                     ${currentUser.role === 'admin' ? `
-                                        <button onclick="toggleCloseKmch('${kmch.id}')" class="px-2.5 py-1.5 ${kmch.closed ? 'bg-slate-200 text-slate-700' : 'bg-amber-100 text-amber-800'} text-xs font-semibold rounded-lg">
-                                            ${kmch.closed ? '🔓 Открыть' : '📁 Закрыть'}
-                                        </button>
+                                        <button onclick="toggleCloseKmch('${kmch.id}')" class="px-2.5 py-1.5 ${kmch.closed ? 'bg-slate-200 text-slate-700' : 'bg-amber-100 text-amber-800'} text-xs font-semibold rounded-lg">${kmch.closed ? '🔓 Открыть' : '📁 Закрыть'}</button>
                                         <button onclick="openKmchConfig('${kmch.id}')" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-lg">⚙️</button>
                                     ` : ''}
                                 </div>
                             </div>
-
                             <div class="mt-3 space-y-1">
                                 <div class="flex justify-between text-xs font-semibold">
                                     <span class="text-slate-600">Прогресс выполнения:</span>
@@ -1099,25 +1034,18 @@
                                     <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
                                 </div>
                             </div>
-
-                            <div class="mt-3 p-3 rounded-xl border ${outputItem ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-200'} text-xs">
-                                <span class="font-semibold ${outputItem ? 'text-emerald-800' : 'text-amber-800'}">Готовое изделие на складе:</span>
-                                <div class="mt-1 ${outputItem ? 'text-emerald-700' : 'text-amber-700'}">${outputItem ? `${escapeHtml(outputItem.name)} · остаток: <b>${outputItem.qty} шт.</b>` : 'Не привязано. Администратору нужно открыть ⚙️ и выбрать складскую позицию.'}</div>
-                            </div>
-
                             <div class="mt-3 text-xs text-slate-500">
                                 <span class="font-semibold text-slate-700">Необходимые компоненты:</span><br>
-                                <div class="mt-1 flex flex-wrap">${assignedNames || '<span class="text-slate-400 italic">компоненты не привязаны администратором</span>'}</div>
+                                <div class="mt-1 flex flex-wrap">${assignedNames || '<span class="text-slate-400 italic">компоненты не привязаны</span>'}</div>
                             </div>
                         </div>
-
                         <div class="grid grid-cols-2 gap-2">
                             <div class="bg-blue-50 border border-blue-100 rounded-xl p-3">
-                                <span class="text-[10px] font-bold text-blue-800 block uppercase">Можно сделать с учетом расходников на складе:</span>
+                                <span class="text-[10px] font-bold text-blue-800 block uppercase">Можно сделать:</span>
                                 <span class="text-xl font-black text-blue-700 mt-1 block">${maxAssembly} шт</span>
                             </div>
                             <div class="bg-amber-50 border border-amber-100 rounded-xl p-3">
-                                <span class="text-[10px] font-bold text-amber-800 block uppercase">Осталось собрать по плану:</span>
+                                <span class="text-[10px] font-bold text-amber-800 block uppercase">Осталось собрать:</span>
                                 <span class="text-xl font-black text-amber-700 mt-1 block">${remainingDeficit > 0 ? remainingDeficit + ' шт' : 'План выполнен! 🎉'}</span>
                             </div>
                         </div>
@@ -1131,49 +1059,27 @@
             const qty = Number.parseInt(document.getElementById('adminItemQty').value, 10);
             const minQty = Number.parseInt(document.getElementById('adminItemMinQty').value, 10);
             const isKmchStock = document.getElementById('adminItemIsKmch').checked;
-            const enteredCategory = (document.getElementById('adminItemCategory').value || '').trim();
-            const category = enteredCategory || (isKmchStock ? 'Готовые КМЧ' : 'Общее');
+            const category = (document.getElementById('adminItemCategory').value || '').trim() || (isKmchStock ? 'Готовые КМЧ' : 'Общее');
             if (!name) { alert('Введите название'); return; }
-            if (!Number.isSafeInteger(qty) || qty < 0 || !Number.isSafeInteger(minQty) || minQty < 0) {
-                alert('Количество и минимальный остаток должны быть целыми неотрицательными числами.');
-                return;
-            }
 
-            const duplicate = items.find(i => i.name.trim().toLocaleLowerCase('ru') === name.toLocaleLowerCase('ru'));
-            if (duplicate) {
-                alert(`Позиция «${duplicate.name}» уже есть на складе. Пополните её через кнопку «Пополнить», чтобы не создавать дубликат.`);
-                return;
-            }
-
-            const newItem = {
-                id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                name, qty, minQty, category,
-                isKmchStock,
-                top: isKmchStock
-            };
-            items.push(newItem);
-            addLog(`Создана складская позиция: «${name}» (${qty} шт., категория: ${category}${isKmchStock ? ', готовое КМЧ' : ''})`);
+            items.push({
+                id: 'item_' + Date.now(),
+                name, qty, minQty, category, isKmchStock, top: isKmchStock
+            });
+            addLog(`Создана позиция: «${name}» (${qty} шт.)`);
             saveData();
             document.getElementById('adminItemName').value = '';
             document.getElementById('adminItemQty').value = '0';
-            document.getElementById('adminItemMinQty').value = '10';
-            document.getElementById('adminItemCategory').value = '';
             document.getElementById('adminItemIsKmch').checked = false;
             renderAll();
-            alert(isKmchStock ? 'Готовое КМЧ добавлено на склад и в избранное.' : 'Складская позиция успешно создана.');
+            alert('Успешно создано!');
         }
 
         function deleteItem(id) {
             const item = items.find(i => i.id === id);
             if (!item) return;
-            const linkedPlans = kmchList.filter(k => k.outputItemId === id);
-            if (linkedPlans.length) {
-                alert(`Нельзя удалить «${item.name}»: позиция привязана к планам ${linkedPlans.map(k => k.name).join(', ')}. Сначала отвяжите её в настройках состава КМЧ.`);
-                return;
-            }
             if (!confirm(`Удалить «${item.name}»?`)) return;
             items = items.filter(i => i.id !== id);
-            // Убираем из составов КМЧ
             kmchList.forEach(k => { k.requiredIds = k.requiredIds.filter(rid => rid !== id); });
             addLog(`Удален расходник: «${item.name}»`);
             saveData();
@@ -1183,7 +1089,7 @@
         function adminAddEmployee() {
             const name = document.getElementById('newEmpName').value.trim();
             const pass = document.getElementById('newEmpPass').value.trim();
-            if (!name || !pass) { alert('Заполните имя и пароль сотрудника'); return; }
+            if (!name || !pass) { alert('Заполните имя и пароль'); return; }
             employees.push({ id: 'emp_' + Date.now(), name, pass });
             saveData();
             document.getElementById('newEmpName').value = '';
@@ -1202,16 +1108,12 @@
         function renderAdminEmployees() {
             const container = document.getElementById('employeesListContainer');
             if (!container) return;
-            if (employees.length === 0) {
-                container.innerHTML = '<span class="text-xs text-slate-400">Нет сотрудников</span>';
-                return;
-            }
-            container.innerHTML = employees.map(e => `
+            container.innerHTML = employees.length ? employees.map(e => `
                 <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl text-xs">
-                    <div><span class="font-bold">${e.name}</span> <span class="text-slate-400">(${e.pass})</span></div>
+                    <div><span class="font-bold">${escapeHtml(e.name)}</span></div>
                     <button onclick="deleteEmployee('${e.id}')" class="text-red-500 hover:text-red-700 font-bold">🗑️</button>
                 </div>
-            `).join('');
+            `).join('') : '<span class="text-xs text-slate-400">Нет сотрудников</span>';
         }
 
         function openKmchConfig(kmchId) {
@@ -1222,24 +1124,20 @@
             document.getElementById('kmchConfigTitle').innerText = `Изделие: ${kmch.name}`;
 
             const outputSelect = document.getElementById('kmchOutputItemSelect');
-            const finishedItems = items.filter(item => item.isKmchStock).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+            const finishedItems = items.filter(i => i.isKmchStock);
             outputSelect.innerHTML = '<option value="">— Не выбрано —</option>' + finishedItems.map(item =>
-                `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} · на складе: ${item.qty} шт.</option>`
+                `<option value="${item.id}">${escapeHtml(item.name)} · на складе: ${item.qty} шт.</option>`
             ).join('');
             outputSelect.value = kmch.outputItemId || '';
 
             const listDiv = document.getElementById('kmchComponentsCheckboxList');
-            const componentItems = items.filter(item => !item.isKmchStock);
-            if (componentItems.length === 0) {
-                listDiv.innerHTML = '<p class="text-xs text-slate-400">Нет комплектующих. Сначала создайте обычные складские расходники.</p>';
-            } else {
-                listDiv.innerHTML = componentItems.map(item => `
-                    <label class="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
-                        <input type="checkbox" value="${escapeHtml(item.id)}" ${kmch.requiredIds.includes(item.id) ? 'checked' : ''} class="kmch-check w-4 h-4 text-blue-600 rounded border-slate-300">
-                        <span class="text-sm font-medium text-slate-800">${escapeHtml(item.name)} <span class="text-xs text-slate-400">(на складе: ${item.qty}, мин: ${item.minQty || 0})</span></span>
-                    </label>
-                `).join('');
-            }
+            const componentItems = items.filter(i => !i.isKmchStock);
+            listDiv.innerHTML = componentItems.map(item => `
+                <label class="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
+                    <input type="checkbox" value="${item.id}" ${kmch.requiredIds.includes(item.id) ? 'checked' : ''} class="kmch-check w-4 h-4 text-blue-600 rounded border-slate-300">
+                    <span class="text-sm font-medium text-slate-800">${escapeHtml(item.name)} <span class="text-xs text-slate-400">(на складе: ${item.qty})</span></span>
+                </label>
+            `).join('');
             document.getElementById('kmchConfigModal').classList.remove('hidden');
         }
         function closeKmchConfigModal() { document.getElementById('kmchConfigModal').classList.add('hidden'); }
@@ -1248,36 +1146,61 @@
             const kmch = kmchList.find(k => k.id === currentEditingKmchId);
             if (!kmch) return;
             const checkboxes = document.querySelectorAll('.kmch-check');
-            const selectedIds = [];
-            checkboxes.forEach(cb => { if (cb.checked) selectedIds.push(cb.value); });
-            const outputItemId = document.getElementById('kmchOutputItemSelect').value || null;
-            if (outputItemId && !items.some(i => i.id === outputItemId && i.isKmchStock)) {
-                alert('Выбранная позиция готового КМЧ не найдена. Обновите список и попробуйте снова.');
-                return;
-            }
-            kmch.requiredIds = selectedIds;
-            kmch.outputItemId = outputItemId;
-            const outputItem = items.find(i => i.id === outputItemId);
-            addLog(`Настроен план КМЧ «${kmch.name}»: ${selectedIds.length} комплектующих; готовое изделие на складе: ${outputItem ? outputItem.name : 'не выбрано'}`);
+            kmch.requiredIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+            kmch.outputItemId = document.getElementById('kmchOutputItemSelect').value || null;
             saveData();
             closeKmchConfigModal();
             renderCalculator();
             renderWarehouse();
         }
 
-        function renderLogs() {
-            const tbody = document.getElementById('logsTableBody');
-            if (logs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400">История пуста</td></tr>`;
+        function renderEmployeeRecords() {
+            const tbody = document.getElementById('employeeRecordsTableBody');
+            const titleEl = document.getElementById('reportTitle');
+            const subtitleEl = document.getElementById('reportSubtitle');
+
+            if (currentUser.role === 'admin') {
+                titleEl.innerText = "Общий отчет: Сборка КМЧ";
+                subtitleEl.innerText = "Просмотр результатов всех сотрудников";
+            } else {
+                titleEl.innerText = "Мои результаты сборки КМЧ";
+                subtitleEl.innerText = "Список ваших собранных изделий";
+            }
+
+            let list = employeeRecords.filter(r => currentUser.role === 'admin' || r.employeeName === currentUser.name);
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">Нет записей о сборке</td></tr>`;
                 return;
             }
-            tbody.innerHTML = logs.map(log => `
+
+            tbody.innerHTML = list.map(rec => {
+                const canModify = (currentUser.role === 'admin' || currentUser.name === rec.employeeName);
+                return `
+                    <tr class="hover:bg-slate-50/85 transition">
+                        <td class="p-3 sm:p-4 font-bold text-slate-900">${escapeHtml(rec.employeeName)}</td>
+                        <td class="p-3 sm:p-4 text-slate-700">${escapeHtml(rec.kmchName)}</td>
+                        <td class="p-3 sm:p-4 text-center font-black text-blue-600 text-base">${rec.count} шт</td>
+                        <td class="p-3 sm:p-4 text-right space-x-1">
+                            ${canModify ? `
+                                <button onclick="modifyRecordCount('${rec.id}', 1)" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-lg">➕</button>
+                                <button onclick="modifyRecordCount('${rec.id}', -1)" class="px-2.5 py-1 bg-amber-50 text-amber-700 font-bold text-xs rounded-lg">➖</button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderLogs() {
+            const tbody = document.getElementById('logsTableBody');
+            tbody.innerHTML = logs.length ? logs.map(log => `
                 <tr class="hover:bg-slate-50/85 transition">
                     <td class="p-3 sm:p-4 text-xs text-slate-500 whitespace-nowrap">${log.time}</td>
-                    <td class="p-3 sm:p-4 font-bold text-xs text-blue-700">${log.user}</td>
-                    <td class="p-3 sm:p-4 text-slate-800">${log.text}</td>
+                    <td class="p-3 sm:p-4 font-bold text-xs text-blue-700">${escapeHtml(log.user)}</td>
+                    <td class="p-3 sm:p-4 text-slate-800">${escapeHtml(log.text)}</td>
                 </tr>
-            `).join('');
+            `).join('') : `<tr><td colspan="3" class="p-6 text-center text-slate-400">История пуста</td></tr>`;
         }
 
         function clearLogs() {
@@ -1287,9 +1210,8 @@
             renderLogs();
         }
 
-        // Инициализация
-        updateUIRoles();
-        renderAll();
+        // Запуск при старте страницы — грузим с PocketBase
+        loadState();
     </script>
 </body>
 </html>
