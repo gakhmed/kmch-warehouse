@@ -300,7 +300,9 @@
         const PB_URL = 'https://sklad-kmch.ru';
         let recordId = null;
 
-        let currentUser = { name: 'Гость', role: 'guest' };
+        // Восстанавливаем пользователя из памяти браузера, если он есть
+        let currentUser = JSON.parse(localStorage.getItem('kmch_user')) || { name: 'Гость', role: 'guest' };
+        
         let items = [], employees = [], kmchList = [], employeeRecords = [], logs = [];
         let currentModalAction = null, currentEditingKmchId = null, currentAssembleKmchId = null;
         let activeTab = 'warehouse', activeWarehouseView = 'general';
@@ -429,7 +431,6 @@
 
         function loginAsAdmin() {
             const pass = document.getElementById('adminPasswordInput').value;
-            // Пароль админа. Оставил ваш, но в идеале сменить.
             if (pass === '89288854667') {
                 currentUser = { name: 'Администратор', role: 'admin' };
                 finalizeLogin("Вход выполнен");
@@ -447,7 +448,9 @@
         }
 
         function finalizeLogin(msg) {
-            closeLoginModal(); updateUIRoles(); renderAll(); // alert(msg);
+            // Сохраняем пользователя в память браузера
+            localStorage.setItem('kmch_user', JSON.stringify(currentUser));
+            closeLoginModal(); updateUIRoles(); renderAll();
         }
 
         function updateUIRoles() {
@@ -461,7 +464,13 @@
                 badge.innerText = currentUser.name;
                 badge.classList.remove('hidden');
                 authBtn.innerText = "Выйти";
-                authBtn.onclick = () => { currentUser = {name:'Гость', role:'guest'}; updateUIRoles(); switchTab('warehouse'); };
+                authBtn.onclick = () => { 
+                    currentUser = {name:'Гость', role:'guest'}; 
+                    // Стираем пользователя из памяти браузера при выходе
+                    localStorage.removeItem('kmch_user');
+                    updateUIRoles(); 
+                    switchTab('warehouse'); 
+                };
             } else {
                 badge.classList.add('hidden');
                 authBtn.innerText = "🔑 Войти";
